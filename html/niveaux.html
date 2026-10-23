@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>DOOMED — tester un niveau</title>
+<style>
+body{margin:0;padding:14px 18px;background:#141416;color:#ddd;font:14px/1.45 Consolas,monospace}
+h1{color:#e33;margin:0 0 6px}
+#options{position:sticky;top:0;background:#141416;padding:8px 0 10px;border-bottom:1px solid #333;margin-bottom:12px;z-index:1}
+#options label{margin-right:18px;cursor:pointer}
+select,input{font:inherit}
+.gris{color:#888}
+.carte{display:inline-block;vertical-align:top;margin:0 12px 14px 0;padding:8px;background:#1d1d22;border:1px solid #333;cursor:pointer;width:300px}
+.carte:hover{border-color:#e33;background:#26262c}
+.carte canvas{display:block;margin:6px 0;image-rendering:pixelated;max-width:100%}
+.carte b{color:#ffd040}
+</style>
+</head>
+<body>
+<canvas id="c" style="display:none"></canvas>
+<h1>DOOMED — tester un niveau</h1>
+<div id="options">
+  <label>Difficulté :
+    <select id="difficulte"><option value="0">Facile</option><option value="1" selected>Normal</option><option value="2">Difficile</option></select></label>
+  <label><input type="checkbox" id="invincible"> invincible</label>
+  <label><input type="checkbox" id="armes"> toutes les armes et munitions</label>
+  <span class="gris">— clic sur un niveau pour le lancer directement</span>
+</div>
+<div id="liste"></div>
+<script>window.NO_LOOP = true;</script>
+<script src="js/01_core.js"></script>
+<script src="js/01b_images_ia.js"></script>
+<script src="js/01c_images_freedoom.js"></script>
+<script src="js/02_assets.js"></script>
+<script src="js/03_audio.js"></script>
+<script src="js/04_maps.js"></script>
+<script src="js/05_render.js"></script>
+<script src="js/06_game.js"></script>
+<script src="js/07_hud.js"></script>
+<script>window.RAPPORT = null;</script>
+<script src="outils/rapport_donnees.js" onerror="void 0"></script>
+<script>
+"use strict";
+/* Liste des niveaux du jeu ; un clic lance index.html?niveau=N avec les options de test (lues par optionsTest). */
+const R = typeof RAPPORT !== 'undefined' && RAPPORT ? RAPPORT : null, Q = (R && R.qualite && R.qualite.niveaux) || {};
+const champs = ['difficulte', 'invincible', 'armes'];
+try {   // options mémorisées pour ce navigateur seulement
+  const m = JSON.parse(localStorage.getItem('doomed_test') || '{}');
+  if (m.difficulte !== undefined) document.getElementById('difficulte').value = m.difficulte;
+  document.getElementById('invincible').checked = !!m.invincible;
+  document.getElementById('armes').checked = !!m.armes;
+} catch (e) {}
+function options() {
+  const o = { difficulte: document.getElementById('difficulte').value,
+              invincible: document.getElementById('invincible').checked, armes: document.getElementById('armes').checked };
+  try { localStorage.setItem('doomed_test', JSON.stringify(o)); } catch (e) {}
+  return `&difficulte=${o.difficulte}${o.invincible ? '&invincible=1' : ''}${o.armes ? '&armes=1' : ''}`;
+}
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const COUL = { 0: '#c8c0b0', 1: '#8a4a30', 2: '#5a6878', 3: '#e08a20', 4: '#30e070' };
+MAPS.forEach((m, i) => {
+  const d = document.createElement('div'); d.className = 'carte';
+  const ennemis = m.rows.join('').split('').filter(ch => SPAWN[ch]).length;
+  const q = Q[m.name] || {}, rb = q.robot, vi = q.vision;
+  d.innerHTML = `<b>${esc(m.name)}</b><br><span class="gris">${m.rows[0].length}×${m.rows.length}${m.style ? ' · ' + esc(m.style) : ''}` +
+    `${m.sky ? ' · extérieur' : ''}${m.light ? ' · lumière' : ''} · ${ennemis} ennemis</span>`;
+  const c = document.createElement('canvas'), z = Math.max(3, Math.min(8, Math.floor(284 / m.rows[0].length)));
+  c.width = m.rows[0].length * z; c.height = m.rows.length * z; const x = c.getContext('2d');
+  m.rows.forEach((r, y) => [...r].forEach((ch, xx) => {
+    x.fillStyle = ch === '~' ? '#ff6a10' : ch === '$' ? '#b07050' : 'RBJ'.includes(ch) ? { R: '#e02020', B: '#2050f0', J: '#e0c010' }[ch] : COUL[LEGEND[ch]] || '#f0f';
+    x.fillRect(xx * z, y * z, z, z);
+    if (SPAWN[ch]) { x.fillStyle = '#d01010'; x.fillRect(xx * z + 1, y * z + 1, z - 2, z - 2); }
+    else if (ch === 'P') { x.fillStyle = '#ffd040'; x.fillRect(xx * z, y * z, z, z); }
+  }));
+  d.appendChild(c);
+  d.insertAdjacentHTML('beforeend', '<span class="gris">' + (rb ? `robot : ${rb.fini ? 'fini' : 'pas fini'} en ${rb.temps} s` : 'robot : —') +
+    (vi && vi.note != null ? ` · relecture ${vi.note}/10` : '') + '</span>');
+  d.onclick = () => { location.href = `index.html?niveau=${i + 1}${options()}`; };
+  document.getElementById('liste').appendChild(d);
+});
+</script>
+</body>
+</html>

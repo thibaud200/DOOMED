@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>DOOMED — tests</title>
+<style>
+body{margin:0;padding:16px;background:#111;color:#ddd;font:13px/1.45 Consolas,monospace}
+h1{margin:0 0 4px;font-size:20px}
+#sum{font-size:16px;font-weight:bold;margin:6px 0 14px}
+.ok{color:#5d5}.ko{color:#f55}.warn{color:#fb4}
+table{border-collapse:collapse;width:100%;max-width:1100px}
+td{padding:2px 8px;border-bottom:1px solid #2a2a2a;vertical-align:top}
+td:first-child{width:52px;font-weight:bold}
+.grp td{padding-top:12px;color:#8ab;font-weight:bold;border:0}
+canvas{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<h1>DOOMED — tests automatiques</h1>
+<div>À ouvrir après chaque modification (double-clic). Tout doit être vert avant de continuer.</div>
+<div id="sum">Tests en cours…</div>
+<table id="out"></table>
+<canvas id="c"></canvas>
+
+<script>
+window.NO_LOOP = true;   // la boucle du jeu ne démarre pas : les tests pilotent tout
+window.__errors = [];
+addEventListener('error', e => {
+  const m = (e.message || 'erreur') + ' (' + String(e.filename || '').split('/').pop() + ':' + e.lineno + ')';
+  window.__bootErr = window.__bootErr || m; window.__errors.push(m);
+});
+</script>
+<script src="js/01_core.js"></script>
+<script src="js/01b_images_ia.js"></script>
+<script src="js/01c_images_freedoom.js"></script>
+<script src="js/02_assets.js"></script>
+<script src="js/03_audio.js"></script>
+<script src="js/04_maps.js"></script>
+<script src="js/05_render.js"></script>
+<script src="js/06_game.js"></script>
+<script src="js/07_hud.js"></script>
+<script src="js/10_editeur_logique.js"></script>
+<script src="js/11_editeur_ui.js"></script>
+
+<script>
+"use strict";
+/* ======================================================================
+   Chaque fonction de test lève une erreur (assert) si quelque chose cloche.
+   Les contrats ci-dessous doivent rester identiques aux en-têtes des js/*.js
+   ====================================================================== */
+const CONTRAT = {
+  '01_core.js': 'W H HUD_H PLAY_H HOR TEX cv ctx fitCanvas clamp rand randInt angNorm rgb makeCanvas FB_IMG FB ZBUF text KEYS PRESSED MOUSE pressed ENTER FATAL showFatal DEBUG_FPS DEBUG_ASSETS FPS frame',
+  '01b_images_ia.js': 'IMAGES_IA',
+  '01c_images_freedoom.js': 'IMAGES_FREEDOOM',
+  '02_assets.js': 'texFromCanvas grit TX WALL_TEX MONSTRES_GENERES enregistrerPoses ASSET_LIST drawAssetSheet imageIA appliquerImagesIA OBJETS_IA appliquerObjetsIA',
+  '03_audio.js': 'audioUnlock tone noise distVol sfx',
+  '04_maps.js': 'CELL_EMPTY CELL_BRICK CELL_TECH CELL_DOOR CELL_EXIT LEGEND SPAWN ITEM MAPS CLE_NIVEAUX CLE_TEST validateMap loadLevel',
+  '05_render.js': 'FOV_PLANE VSCALE shadeOf shadePx camera lumiere render3D renderFloorCeil castWalls drawSprites',
+  '06_game.js': 'G ENEMY_DEF wantsPointerLock onPointerUnlock say inventaire newPlayer startGame optionsTest startLevel restartLevel mkEnemy solidCell solidAt tryMove losClear computeFlow gameUpdate updatePlay updateWorld updateDoors updateEnemies updateShots updatePickups wake wakeNear hurtPlayer damageEnemy fire hitscan spawnFireball useAction enemyTex collectSprites',
+  '07_hud.js': 'gameDraw hudBg panel fmtTime drawWeapon drawHUD drawFace drawMinimap drawTitle drawVictory',
+  '10_editeur_logique.js': 'ED_LIMITES',
+  '11_editeur_ui.js': 'ED ED_COULEURS ED_NOMS',
+};
+const SONS = 'pistol shotgun click hit sight claw bite fireball boom epain edeath hurt pdeath pickup weapon door oof switch';
+
+const rows = [];
+let nOk = 0, nKo = 0, nWarn = 0;
+function assert(c, msg) { if (!c) throw new Error(msg); }
+function group(t) { rows.push(`<tr class="grp"><td colspan="2">${t}</td></tr>`); }
+function test(name, fn) {
+  try {
+    const w = fn();
+    if (typeof w === 'string' && w) { nWarn++; rows.push(`<tr><td class="warn">ALERTE</td><td>${name} — ${esc(w)}</td></tr>`); }
+    else { nOk++; rows.push(`<tr><td class="ok">OK</td><td>${name}</td></tr>`); }
+  } catch (e) {
+    nKo++;
+    rows.push(`<tr><td class="ko">ÉCHEC</td><td>${name}<br><span class="ko">${esc(e.message || e)}</span></td></tr>`);
+  }
+}
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const typeOf = n => { try { return (0, eval)('typeof ' + n); } catch (e) { return 'undefined'; } };
+const step = (sec, each) => { for (let i = 0; i < sec * 60; i++) { if (each) each(i); gameUpdate(1 / 60); PRESSED.clear(); MOUSE.dx = 0; } };
+const press = code => { PRESSED.add(code); gameUpdate(1 / 60); PRESSED.clear(); };
+
+/* Espion sur text() : tout texte doit tenir dans l'écran (bug déjà vu : libellés du HUD sous l'écran). */
+const horsEcran = [];
+if (typeOf('text') === 'function') {
+  const vraiText = text;
+  window.text = function (str, x, y, size, color, align) {
+    ctx.font = 'bold ' + size + 'px monospace';
+    const w = ctx.measureText(String(str)).width;
+    const x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+    if (x0 < -1 || x0 + w > W + 1 || y - size / 2 < -1 || y + size / 2 > H + 1)
+      horsEcran.push(`« ${str} » en (${x | 0}, ${y | 0}) taille ${size}`);
+    return vraiText.apply(this, arguments);
+  };
+}
+
+/* ---------------- 1. chargement et contrats ---------------- */
+group('1. Chargement des fichiers et contrats');
+test('Aucune erreur au chargement des scripts', () => assert(!window.__bootErr, window.__errors.join(' | ')));
+for (const [f, names] of Object.entries(CONTRAT)) {
+  test(`Contrat de ${f}`, () => {
+    const manque = names.split(' ').filter(n => typeOf(n) === 'undefined');
+    assert(!manque.length, 'manquant : ' + manque.join(', '));
+  });
+}
+test('Les 18 sons de sfx existent', () => {
+  const manque = SONS.split(' ').filter(s => typeof sfx[s] !== 'function');
+  assert(!manque.length, 'manquant : sfx.' + manque.join(', sfx.'));
+});
+
+/* ---------------- 2. textures ---------------- */
+group('2. Textures et sprites (format attendu par le moteur)');
+test('Chaque asset de ASSET_LIST a le bon format {w, h, px, cv}', () => {
+  const pb = [];
+  for (const k of ASSET_LIST) {
+    const t = TX[k];
+    if (!t) { pb.push(k + ' absent'); continue; }
+    if (!(t.px instanceof Uint32Array)) { pb.push(k + ' : px n\'est pas un Uint32Array (canvas renvoyé au lieu des pixels ?)'); continue; }
+    if (t.px.length !== t.w * t.h) pb.push(k + ' : taille px ≠ w×h');
+    if (!t.cv || !t.cv.getContext) pb.push(k + ' : cv manquant');
+    if (!t.px.some(c => c !== 0)) pb.push(k + ' : entièrement transparent');
+  }
+  assert(!pb.length, pb.join(' ; '));
+});
+test('Murs, sol, plafond : 64×64 et sans trou', () => {
+  const pb = ['brick', 'tech', 'door', 'exit', 'floor', 'ceil'].filter(k => {
+    const t = TX[k]; return !t || t.w !== 64 || t.h !== 64 || !t.px || t.px.some(c => c === 0);
+  });
+  assert(!pb.length, 'problème : ' + pb.join(', '));
+});
+test('WALL_TEX[1..4] = brique, tech, porte, sortie', () =>
+  assert(WALL_TEX[1] === TX.brick && WALL_TEX[2] === TX.tech && WALL_TEX[3] === TX.door && WALL_TEX[4] === TX.exit, 'WALL_TEX mal rempli'));
+test('Armes en vue subjective (canvas)', () => {
+  for (const k of ['wpPistol', 'wpShotgun', 'wpFlash']) assert(TX[k] && TX[k].width > 0 && TX[k].getContext, k + ' absent ou pas un canvas');
+});
+test('Planche F2 dessinable', () => { drawAssetSheet(); });
+
+/* ---------------- 3. cartes ---------------- */
+group('3. Cartes');
+MAPS.forEach((m, i) => {
+  test(`${m.name} : validateMap`, () => { const e = validateMap(m); assert(!e.length, e.join(' ; ')); });
+  test(`${m.name} : sortie atteignable depuis le départ (portes comprises)`, () => {
+    const L = loadLevel(i);
+    const parcours = avecSecrets => {   // cases atteintes depuis P ; les murs secrets ($) comptent si avecSecrets
+      const seen = new Uint8Array(L.w * L.h), q = [[L.start.x | 0, L.start.y | 0]];
+      let exit = false;
+      seen[q[0][1] * L.w + q[0][0]] = 1;
+      while (q.length) {
+        const [x, y] = q.shift();
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx, ny = y + dy, c = L.grid[ny * L.w + nx];
+          const secret = avecSecrets && (L.secrets || []).some(s => s.x === nx && s.y === ny);
+          if (c === CELL_EXIT) exit = true;
+          if ((c === CELL_EMPTY || c === CELL_DOOR || secret) && !seen[ny * L.w + nx]) { seen[ny * L.w + nx] = 1; q.push([nx, ny]); }
+        }
+      }
+      return { seen, exit };
+    };
+    assert(parcours(false).exit, 'aucun chemin du départ P jusqu\'à une case E (sans passer par un secret)');
+    const seen = parcours(true).seen;
+    const isoles = L.enemies.concat(L.items).filter(o => !seen[(o.y | 0) * L.w + (o.x | 0)]);
+    if (isoles.length) return isoles.length + ' ennemi(s)/objet(s) inaccessible(s)';
+  });
+  test(`${m.name} : au moins 1 ennemi`, () => assert(loadLevel(i).enemies.length > 0, 'aucun ennemi'));
+});
+test('Le validateur refuse une carte cassée', () =>
+  assert(validateMap({ name: 't', rows: ['#####', '#P.=#', '####'] }).length >= 2, 'carte cassée acceptée'));
+
+/* ---------------- 4. rendu ---------------- */
+group('4. Moteur de rendu');
+MAPS.forEach((m, i) => {
+  test(`${m.name} : image 3D variée, distances valides`, () => {
+    const L = loadLevel(i);
+    render3D(L.start, L, []);
+    const set = new Set();
+    for (let k = 0; k < FB.length; k += 97) set.add(FB[k]);
+    assert(set.size > 30, `image presque unie (${set.size} couleurs) : textures ou rendu cassés`);
+    for (let x = 0; x < W; x++) assert(ZBUF[x] > 0 && ZBUF[x] < 100, 'ZBUF invalide en x=' + x + ' : ' + ZBUF[x]);
+  });
+});
+test('Vitesse : moins de 8 ms par image', () => {
+  startGame();
+  const s = collectSprites(), t0 = performance.now();
+  for (let k = 0; k < 20; k++) render3D(G.P, G.L, s);
+  const ms = (performance.now() - t0) / 20;
+  assert(ms < 8, ms.toFixed(1) + ' ms par image');
+  if (ms > 4) return ms.toFixed(1) + ' ms par image (correct mais à surveiller)';
+});
+test('Un sprite est caché derrière un mur', () => {
+  startGame();
+  const L = G.L; G.P.x = 2.5; G.P.y = 2.5; G.P.a = 0;      // salle de départ, mur à l'est (x = 7)
+  render3D(G.P, L, []);
+  const avant = FB.slice();
+  render3D(G.P, L, [{ x: 12.5, y: 2.5, tex: TX.impA, scale: 0.9 }]);   // ennemi derrière le mur
+  assert(FB.every((c, k) => c === avant[k]), 'le sprite est dessiné à travers le mur');
+});
+
+/* ---------------- 5. jeu ---------------- */
+group('5. Partie simulée');
+test('Combat 30 s : aucune erreur, joueur jamais dans un mur, des ennemis tués', () => {
+  startGame(); G.P.hp = 1e6;
+  G.P.x = 11.5; G.P.y = 6.5;                 // au milieu du hangar, face aux diablotins
+  for (const e of G.enemies) wake(e);
+  step(30, () => {
+    const live = G.enemies.filter(e => e.state !== 'dead' && losClear(G.P.x, G.P.y, e.x, e.y));
+    MOUSE.down = live.length > 0;
+    if (live.length) {
+      live.sort((a, b) => Math.hypot(a.x - G.P.x, a.y - G.P.y) - Math.hypot(b.x - G.P.x, b.y - G.P.y));
+      G.P.a = Math.atan2(live[0].y - G.P.y, live[0].x - G.P.x);
+    }
+    assert(isFinite(G.P.x) && isFinite(G.P.y) && isFinite(G.P.hp), 'position ou vie non numérique');
+    assert(!solidAt(G.P.x, G.P.y), 'joueur dans un mur');
+    for (const e of G.enemies) assert(isFinite(e.x) && isFinite(e.y), 'ennemi à une position non numérique');
+  });
+  MOUSE.down = false;
+  assert(G.kills > 0, 'aucun ennemi tué en 30 s de tir');
+});
+test('Pas de liste qui grossit sans fin (G.shots, G.fx)', () => {
+  startGame(); G.P.hp = 1e6;
+  for (const e of G.enemies) e.state = 'dead';
+  // 60 boules de feu tirées contre un mur : toutes doivent exploser puis disparaître
+  for (let k = 0; k < 60; k++) G.shots.push({ x: 4.5, y: 2.5, vx: 0, vy: -5, life: 4 });
+  step(1);
+  assert(G.shots.length === 0, `${G.shots.length} boule(s) de feu jamais retirée(s)`);
+  assert(G.fx.length === 0, `${G.fx.length} explosion(s) jamais retirée(s) : G.fx grossit sans fin`);
+});
+test('Déplacement 20 s en tournant : jamais dans un mur', () => {
+  startGame();
+  KEYS.KeyW = true; KEYS.KeyD = true;
+  try { step(20, i => { G.P.a += (i % 240 < 120 ? 0.03 : -0.05); G.P.hp = 100; assert(!solidAt(G.P.x, G.P.y), 'joueur dans un mur en (' + G.P.x.toFixed(2) + ', ' + G.P.y.toFixed(2) + ')'); }); }
+  finally { KEYS.KeyW = false; KEYS.KeyD = false; }
+});
+test('[1a] computeFlow : distances justes, pas de saut d\'un bord à l\'autre', () => {
+  if (typeof computeFlow !== 'function') return 'computeFlow absente (micro-tâche 1a pas encore faite)';
+  startGame(); computeFlow();
+  const L = G.L, f = G.flow, si = Math.floor(G.P.y) * L.w + Math.floor(G.P.x);
+  assert(f[si] === 0, 'la case du joueur ne vaut pas 0');
+  // cases atteignables depuis le joueur (sans ouvrir de secret) : toutes doivent avoir une distance
+  const vu = new Uint8Array(L.w * L.h), q = [si];
+  vu[si] = 1;
+  while (q.length) {
+    const i = q.pop(), x = i % L.w, y = (i / L.w) | 0;
+    for (const j of [i + 1, i - 1, i + L.w, i - L.w])
+      if (!vu[j] && (L.grid[j] === CELL_EMPTY || L.grid[j] === CELL_DOOR) && Math.abs((j % L.w) - x) + Math.abs(((j / L.w) | 0) - y) === 1) { vu[j] = 1; q.push(j); }
+  }
+  const atteignables = vu.reduce((n, v) => n + v, 0);
+  assert(f.filter(v => v >= 0).length === atteignables, `des cases atteignables n'ont pas de distance (${f.filter(v => v >= 0).length} / ${atteignables})`);
+  // mini-carte 3×2 ouverte sur les bords (défaut du 17/10, voir outils/defauts_ia.md)
+  const sauve = G.L;
+  G.L = { w: 3, h: 2, grid: new Uint8Array([0, 1, 0, 0, 1, 0]) }; G.P.x = 2.5; G.P.y = 0.5;
+  try { computeFlow(); assert(Array.from(G.flow).join() === '-1,-1,0,-1,-1,1', 'saut d\'un bord à l\'autre : ' + Array.from(G.flow).join()); }
+  finally { G.L = sauve; }
+});
+test('Porte : s\'ouvre à l\'approche, se referme ensuite', () => {
+  startGame();
+  const D = G.L.doors[0];
+  G.P.x = D.x - 0.7 + 0.5; G.P.y = D.y + 0.5;
+  step(1.2);
+  assert(D.open === 1, 'porte non ouverte (open=' + D.open + ')');
+  G.P.x = G.L.start.x; G.P.y = G.L.start.y;
+  for (const e of G.enemies) e.state = 'dead';
+  step(5);
+  assert(D.open === 0, 'porte non refermée (open=' + D.open + ')');
+});
+test('Ramassages : trousse et fusil', () => {
+  startGame();
+  const med = G.items.find(i => i.type === 'medkit'), sg = G.items.find(i => i.type === 'shotgun');
+  G.P.hp = 50; G.P.x = med.x; G.P.y = med.y; updatePickups();
+  assert(G.P.hp === 75 && med.taken, 'trousse non ramassée');
+  G.P.x = sg.x; G.P.y = sg.y; updatePickups();
+  assert(G.P.hasShotgun && G.P.weapon === 1 && G.P.shells > 0, 'fusil non ramassé');
+});
+test('Enchaînement : sortie E1 → E2 → victoire → titre', () => {
+  startGame();
+  const exitOf = L => { for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) if (L.grid[y * L.w + x] === CELL_EXIT) return { x, y }; };
+  for (let n = 0; n < MAPS.length; n++) {
+    const L = G.L, e = exitOf(L);
+    const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]].find(([dx, dy]) => L.grid[(e.y - dy) * L.w + (e.x - dx)] === CELL_EMPTY);
+    G.P.x = e.x - dirs[0] + 0.5; G.P.y = e.y - dirs[1] + 0.5; G.P.a = Math.atan2(dirs[1], dirs[0]);
+    press('KeyE');
+    assert(G.state === 'clear', `${L.name} : E devant la sortie ne termine pas le niveau (état ${G.state})`);
+    step(0.6); press('Enter');
+  }
+  assert(G.state === 'victory', 'pas d\'écran de victoire après le dernier niveau');
+  step(1.1); press('Enter');
+  assert(G.state === 'title', 'Entrée ne ramène pas à l\'écran titre');
+});
+test('Mort puis recommencer le niveau', () => {
+  startGame(); G.P.hp = 5;
+  hurtPlayer(10, { x: G.P.x + 1, y: G.P.y });
+  gameUpdate(1 / 60);
+  assert(G.state === 'dead', 'le joueur ne meurt pas');
+  step(1.1); press('Enter');
+  assert(G.state === 'play' && G.P.hp === 100, 'le niveau ne recommence pas avec 100 PV');
+});
+test('Tous les sons se jouent sans planter (même sans carte son)', () => {
+  for (const s of SONS.split(' ')) sfx[s]('imp', 0.5);
+});
+
+/* ---------------- 6. affichage ---------------- */
+group('6. Affichage de chaque écran');
+for (const st of ['title', 'play', 'pause', 'dead', 'clear', 'victory']) {
+  test(`Écran « ${st} » : se dessine, textes dans l'écran`, () => {
+    startGame(); G.P.hp = 37; G.P.hurt = 0.3; G.P.flash = 0.05; G.state = st; G.stateT = 2;
+    horsEcran.length = 0;
+    gameDraw();
+    assert(!horsEcran.length, 'texte hors écran : ' + horsEcran.slice(0, 4).join(' ; '));
+  });
+}
+test('Les chiffres et libellés du HUD tiennent dans sa barre (y 272–320)', () => {
+  startGame();
+  const hors = [];
+  const t = window.text;
+  window.text = function (str, x, y, size) {
+    if (y > PLAY_H && (y - size / 2 < PLAY_H - 1 || y + size / 2 > H + 1)) hors.push(`« ${str} » y=${y | 0}`);
+    return t.apply(this, arguments);
+  };
+  try { drawHUD(); } finally { window.text = t; }
+  assert(!hors.length, hors.join(' ; '));
+});
+test('Aucun texte du HUD n\'est caché sous le visage (x 217–263)', () => {
+  startGame(); G.P.armor = 50;
+  const caches = [], t = window.text;
+  window.text = function (str, x, y, size, color, align) {
+    ctx.font = 'bold ' + size + 'px monospace';
+    const w = ctx.measureText(String(str)).width, x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
+    if (y > PLAY_H && x0 < 263 && x0 + w > 217) caches.push(`« ${str} » de x=${x0 | 0} à ${(x0 + w) | 0}`);
+    return t.apply(this, arguments);
+  };
+  try { drawHUD(); } finally { window.text = t; }
+  assert(!caches.length, 'texte recouvert par le visage : ' + caches.join(' ; '));
+});
+
+/* ---------------- 7. tests d'acceptation des micro-tâches ----------------
+   Un test par micro-tâche d'INSTRUCTIONS_IA.md, nommé « [id] … ».
+   Tant que la micro-tâche n'est pas faite, il affiche une ALERTE (n'empêche rien).
+   Une fois faite, il doit être VERT : outils/ia_tache.py refuse sinon la réponse du modèle. */
+group('7. Tests d\'acceptation des micro-tâches (INSTRUCTIONS_IA.md)');
+const PAS_FAITE = 'micro-tâche pas encore faite';
+const srcDe = n => typeOf(n) === 'function' ? String((0, eval)(n)) : '';
+function textesDessines(fn) {   // tout le texte dessiné pendant fn (text() et ctx.fillText)
+  const vus = [], t = window.text, f = ctx.fillText;
+  window.text = function (s) { vus.push(String(s)); return t.apply(this, arguments); };
+  ctx.fillText = function (s) { vus.push(String(s)); return f.apply(this, arguments); };
+  try { fn(); } finally { window.text = t; ctx.fillText = f; }
+  return vus.join(' | ');
+}
+function avecCarte(rows, fn) {   // carte de test ajoutée le temps du test
+  MAPS.push({ name: 'TEST', angle: 0, rows });
+  try { return fn(MAPS.length - 1); } finally { MAPS.pop(); startGame(); }
+}
+const CARTE_SECRET = ['########', '#P.$...#', '#......#', '####E###', '########'];
+
+test('[1b] carte des distances recalculée 4 fois par seconde', () => {
+  if (!/flowT/.test(srcDe('updateWorld')) || !/flowT/.test(srcDe('startLevel'))) return PAS_FAITE;
+  startGame();
+  assert(G.flowT === 0, 'startLevel doit mettre G.flowT à 0 (vaut ' + G.flowT + ')');
+  step(0.1);
+  assert(G.flow && G.flow.length === G.L.w * G.L.h, 'G.flow non calculée après 0,1 s de jeu');
+  G.P.x = 4.5; G.P.y = 3.5; step(0.3);
+  assert(G.flow[3 * G.L.w + 4] === 0, 'G.flow non recalculée quand le joueur se déplace');
+});
+test('[1c] flowTarget : null sans carte, 4 directions, meilleure voisine', () => {
+  if (typeOf('flowTarget') !== 'function') return PAS_FAITE;
+  startGame();
+  const sauveL = G.L, sauveF = G.flow;
+  try {
+    G.flow = undefined;
+    assert(flowTarget({ x: 2.5, y: 2.5 }) === null, 'doit renvoyer null si G.flow n\'existe pas encore (1re image d\'un niveau)');
+    G.L = { w: 3, h: 3, grid: new Uint8Array(9) };
+    G.flow = Int16Array.from([5, 5, 0, 5, 9, 3, 5, 2, 5]);   // diagonale (2,0) = 0 ; droite (2,1) = 3 ; bas (1,2) = 2
+    const t = flowTarget({ x: 1.5, y: 1.5 });
+    assert(t && t.x === 1.5 && t.y === 2.5, 'doit choisir la voisine du bas (1,2) et jamais une diagonale ; obtenu ' + JSON.stringify(t));
+    G.flow = Int16Array.from([-1, -1, -1, -1, 0, -1, -1, -1, -1]);
+    assert(flowTarget({ x: 1.5, y: 1.5 }) === null, 'doit renvoyer null si aucune voisine n\'est atteignable');
+    G.flow = Int16Array.from([0, 1, 2]);
+    assert(flowTarget({ x: 1.5, y: 1.5 }) === null, 'doit renvoyer null si G.flow n\'a pas la taille du niveau (carte d\'un autre niveau)');
+  } finally { G.L = sauveL; G.flow = sauveF; }
+});
+test('[1d] un ennemi qui ne voit pas le joueur le rejoint en contournant les murs', () => {
+  if (!/flowTarget/.test(srcDe('updateEnemies'))) return PAS_FAITE;
+  startGame(); G.P.hp = 1e6;
+  const imp = G.enemies.find(e => Math.floor(e.x) === 11 && Math.floor(e.y) === 3);
+  assert(imp, 'diablotin de test introuvable en (11, 3) : carte E1 modifiée ?');
+  for (const e of G.enemies) if (e !== imp) e.state = 'dead';
+  imp.state = 'chase';                                   // réveillé, mais derrière les murs
+  const d0 = Math.hypot(imp.x - G.P.x, imp.y - G.P.y);
+  step(15, () => { G.P.hp = 1e6; });
+  const d1 = Math.hypot(imp.x - G.P.x, imp.y - G.P.y);
+  assert(d1 < 2, `le diablotin n'a pas rejoint le joueur en 15 s (distance ${d0.toFixed(1)} → ${d1.toFixed(1)})`);
+});
+test('[2a] table WEAPONS : 5 armes, pistolet et fusil inchangés', () => {
+  if (typeOf('WEAPONS') === 'undefined') return PAS_FAITE;
+  assert(Array.isArray(WEAPONS) && WEAPONS.length === 5, 'WEAPONS doit être un tableau de 5 armes');
+  const champs = ['name', 'ammo', 'cool', 'pellets', 'spread', 'dmgMin', 'dmgMax', 'range'];
+  WEAPONS.forEach((w, i) => { const m = champs.filter(k => !(k in w)); assert(!m.length, `arme ${i} : champ(s) manquant(s) ${m.join(', ')}`); });
+  const [p, f, g, c, r] = WEAPONS;
+  assert(p.ammo === null && p.cool === 0.35 && p.pellets === 1 && p.dmgMin === 10 && p.dmgMax === 15 && p.range === 20, 'pistolet (0) : valeurs différentes de celles de fire()');
+  assert(f.ammo === 'shells' && f.cool === 0.9 && f.pellets === 7 && f.spread === 0.08 && f.dmgMin === 6 && f.dmgMax === 10 && f.range === 12, 'fusil (1) : valeurs différentes de celles de fire()');
+  assert(g.ammo === null && g.range > 0 && g.range <= 1.5, 'poing (2) : sans munitions, portée ≤ 1,5');
+  assert(c.ammo === 'bullets' && c.cool < 0.2, 'mitrailleuse (3) : munitions « bullets », tir rapide (cool < 0,2)');
+  assert(r.ammo === 'rockets' && r.rocket === true, 'lance-roquettes (4) : munitions « rockets » et rocket: true');
+});
+test('[2b] joueur : armes possédées et munitions', () => {
+  const p = newPlayer();
+  if (!('owned' in p)) return PAS_FAITE;
+  assert(JSON.stringify(p.owned) === '[true,false,true,false,false]', 'owned doit valoir [true, false, true, false, false] ; vaut ' + JSON.stringify(p.owned));
+  assert(p.bullets === 50 && p.rockets === 0, `bullets=${p.bullets} rockets=${p.rockets} (attendu 50 / 0)`);
+  assert(['hasShotgun', 'shells', 'armor', 'hp'].every(k => k in p) && p.weapon === 0, 'des champs existants du joueur ont disparu');
+});
+test('[2c] fire() lit WEAPONS : munitions, cadence, poing', () => {
+  if (!/WEAPONS/.test(srcDe('fire'))) return PAS_FAITE;
+  startGame(); const P = G.P;
+  for (const e of G.enemies) e.state = 'dead';
+  P.owned = [true, true, true, true, true]; P.hasShotgun = true;
+  P.weapon = 0; fire();
+  assert(Math.abs(P.cool - 0.35) < 1e-9 && P.weapon === 0, `pistolet : cool=${P.cool} (attendu 0,35)`);
+  P.weapon = 1; P.shells = 5; fire();
+  assert(P.shells === 4 && Math.abs(P.cool - 0.9) < 1e-9, `fusil : shells=${P.shells} (attendu 4), cool=${P.cool} (attendu 0,9)`);
+  P.weapon = 3; P.bullets = 10; fire();
+  assert(P.bullets === 9 && P.cool < 0.2, `mitrailleuse : bullets=${P.bullets} (attendu 9), cool=${P.cool}`);
+  P.weapon = 1; P.shells = 0; fire();
+  assert(P.weapon === 0, 'fusil sans cartouches : doit repasser au pistolet (weapon 0)');
+  const e = G.enemies[0]; e.state = 'chase'; e.cool = 99; e.hp = 100; e.x = P.x + 1; e.y = P.y; P.a = 0;
+  P.weapon = 2; fire();
+  assert(e.hp < 100, 'poing : un ennemi à 1 case droit devant doit être touché');
+  e.hp = 100; e.x = P.x + 3; fire();
+  assert(e.hp === 100, 'poing : un ennemi à 3 cases ne doit pas être touché');
+});
+test('[2d] roquette : explose sur un ennemi ou un mur, dégâts de zone, blesse aussi le tireur', () => {
+  if (typeOf('spawnRocket') !== 'function' || !/rocket/.test(srcDe('updateShots'))) return PAS_FAITE;
+  startGame(); const P = G.P;
+  for (const e of G.enemies) e.state = 'dead';
+  const e = G.enemies[0]; e.state = 'chase'; e.hp = 500; e.x = 5.5; e.y = 2.5;
+  P.x = 1.5; P.y = 2.5; P.a = 0; P.hp = 100; P.armor = 0;
+  spawnRocket();
+  assert(G.shots.length === 1 && G.shots[0].rocket === true, 'spawnRocket doit ajouter un projectile { rocket: true } dans G.shots');
+  step(1.5, () => { e.cool = 99; });
+  assert(e.hp <= 470, `ennemi touché de plein fouet : PV ${e.hp} (attendu ≤ 470)`);
+  assert(P.hp === 100, `le tireur loin de l'explosion ne doit pas être blessé (PV ${P.hp})`);
+  assert(G.shots.length === 0, 'la roquette doit disparaître après l\'explosion');
+  e.state = 'dead';
+  P.x = 6.2; P.y = 2.5; P.a = 0;                        // mur à 0,8 case devant
+  spawnRocket(); step(1);
+  assert(P.hp < 100, 'une roquette qui explose à moins de 2,5 cases doit blesser le tireur');
+});
+test('[2e] touches 1 à 5 : change d\'arme si elle est possédée', () => {
+  if (!/owned/.test(srcDe('updatePlay'))) return PAS_FAITE;
+  startGame(); const P = G.P;
+  for (const e of G.enemies) e.state = 'dead';
+  P.owned = [true, false, true, true, false]; P.hasShotgun = false;
+  press('Digit4'); assert(P.weapon === 3, 'touche 4, mitrailleuse possédée → weapon 3 (vaut ' + P.weapon + ')');
+  press('Digit5'); assert(P.weapon === 3, 'touche 5, lance-roquettes non possédé → arme inchangée');
+  press('Digit3'); assert(P.weapon === 2, 'touche 3 → poing (weapon 2)');
+  press('Digit2'); assert(P.weapon === 2, 'touche 2, fusil non possédé → arme inchangée');
+  P.hasShotgun = true; press('Digit2'); assert(P.weapon === 1, 'fusil ramassé (hasShotgun) → la touche 2 doit marcher tout de suite');
+  press('Digit1'); assert(P.weapon === 0, 'touche 1 → pistolet');
+});
+test('[2f] sprites des 5 armes, drawWeapon choisit le bon', () => {
+  if (!TX.wpFist) return PAS_FAITE;
+  const imgs = [TX.wpPistol, TX.wpShotgun, TX.wpFist, TX.wpChaingun, TX.wpRocket];
+  imgs.forEach((c, i) => assert(c && c.getContext && c.width > 0, `sprite d'arme ${i} absent ou pas un canvas`));
+  startGame();
+  const d = ctx.drawImage, vus = [];
+  ctx.drawImage = function (img) { vus.push(img); return d.apply(this, arguments); };
+  try {
+    for (let i = 0; i < 5; i++) {
+      G.P.weapon = i; vus.length = 0; drawWeapon();
+      assert(vus.includes(imgs[i]), `weapon ${i} : drawWeapon ne dessine pas le bon sprite`);
+    }
+  } finally { ctx.drawImage = d; }
+});
+test('[2g] objets : mitrailleuse, lance-roquettes, balles, roquettes', () => {
+  if (ITEM['C'] !== 'chaingun') return PAS_FAITE;
+  const types = { C: 'chaingun', L: 'launcher', m: 'bullets', k: 'rockets' };
+  for (const [ch, t] of Object.entries(types)) {
+    assert(ITEM[ch] === t && LEGEND[ch] === 0, `ITEM['${ch}'] = '${t}' et LEGEND['${ch}'] = 0 attendus`);
+    assert(TX[t] && TX[t].px instanceof Uint32Array && ASSET_LIST.includes(t), `texture TX.${t} absente, au mauvais format ou pas dans ASSET_LIST`);
+    assert(ITEM_TEX[t] && ITEM_TEX[t]() === TX[t] && ITEM_SCALE[t] > 0, `ITEM_TEX / ITEM_SCALE de « ${t} » manquants`);
+  }
+  startGame(); const P = G.P;
+  const prendre = type => { const it = { type, x: P.x, y: P.y, taken: false }; G.items = [it]; updatePickups(); return it.taken; };
+  P.bullets = 50; assert(prendre('chaingun') && P.owned[3] && P.weapon === 3 && P.bullets === 70, `mitrailleuse : owned[3]=${P.owned[3]} weapon=${P.weapon} bullets=${P.bullets} (attendu true / 3 / 70)`);
+  P.rockets = 0; assert(prendre('launcher') && P.owned[4] && P.weapon === 4 && P.rockets === 2, `lance-roquettes : owned[4]=${P.owned[4]} weapon=${P.weapon} rockets=${P.rockets} (attendu true / 4 / 2)`);
+  P.bullets = 195; assert(prendre('bullets') && P.bullets === 200, `balles : ${P.bullets} (attendu 200, plafond)`);
+  assert(!prendre('bullets'), 'balles au maximum (200) : l\'objet doit rester au sol');
+  P.rockets = 49; assert(prendre('rockets') && P.rockets === 50, `roquettes : ${P.rockets} (attendu 50, plafond)`);
+  assert(!prendre('rockets'), 'roquettes au maximum (50) : l\'objet doit rester au sol');
+});
+function texturesVisibles(noms, part) {   // chaque texture : bon format et au moins part des pixels visibles
+  for (const n of noms) {
+    const t = TX[n];
+    assert(t && t.px instanceof Uint32Array && t.px.length === t.w * t.h, `TX.${n} absent ou au mauvais format (texFromCanvas(makeCanvas(…)))`);
+    const vus = t.px.reduce((s, c) => s + (c !== 0 ? 1 : 0), 0);
+    assert(vus >= t.w * t.h * part, `TX.${n} presque invisible (${vus} pixels visibles sur ${t.w * t.h}) : dessiner avec le paramètre x de makeCanvas, en couleurs opaques`);
+  }
+}
+test('[2g-tex] buildMoreObjects : textures des objets visibles (vérifié dès l\'écriture de la fonction)', () => {
+  if (typeOf('buildMoreObjects') !== 'function') return PAS_FAITE;
+  buildMoreObjects();
+  texturesVisibles(['chaingun', 'launcher', 'bullets', 'rockets'], 0.08);
+});
+test('[2h] HUD : munitions de l\'arme en main, cases 1 à 5', () => {
+  if (!/WEAPONS|owned/.test(srcDe('drawHUD'))) return PAS_FAITE;
+  startGame(); const P = G.P;
+  P.owned = [true, true, true, true, false]; P.weapon = 3; P.bullets = 37;
+  let t = textesDessines(() => drawHUD());
+  assert(/\b37\b/.test(t), 'mitrailleuse en main : « 37 » (balles) attendu ; dessiné : ' + t);
+  for (const n of ['1', '2', '3', '4', '5']) assert(t.split(' | ').includes(n), `case d'arme « ${n} » absente`);
+  P.weapon = 2; t = textesDessines(() => drawHUD());
+  assert(/--/.test(t), 'poing en main (sans munitions) : « -- » attendu');
+  P.weapon = 1; P.shells = 12; t = textesDessines(() => drawHUD());
+  assert(/\b12\b/.test(t), 'fusil en main : « 12 » (cartouches) attendu');
+});
+test('[7a] fiches ENEMY_DEF : diablotin + 4 nouveaux ennemis', () => {
+  if (!ENEMY_DEF.caco) return PAS_FAITE;
+  const D = ENEMY_DEF, i = D.imp.ranged;
+  assert(D.imp.hp === 60 && D.pinky.hp === 150 && !D.pinky.ranged, 'imp et pinky ne doivent pas changer (sauf ranged ajouté au diablotin)');
+  assert(i && i.min === 2 && i.max === 10 && i.speed === 5 && i.dmg === 12 && i.cool[0] === 1.5 && i.cool[1] === 2.5, 'imp.ranged doit reprendre ses valeurs actuelles (2, 10, [1.5, 2.5], 5, 12)');
+  assert(D.caco.hp === 200 && D.caco.fly > 0 && D.caco.ranged && D.caco.ranged.color === 'blue' && D.caco.ranged.dmg === 15 && D.caco.ranged.speed === 4, 'fiche caco incorrecte');
+  assert(D.soldier.hp === 20 && D.soldier.melee === 0 && D.soldier.hitscan && D.soldier.hitscan.dmg[0] === 3 && D.soldier.hitscan.dmg[1] === 9 && D.soldier.drop === 'bullets', 'fiche soldier incorrecte');
+  assert(D.lostsoul.hp === 30 && D.lostsoul.fly > 0 && D.lostsoul.charge && D.lostsoul.charge.speed === 7 && D.lostsoul.charge.dmg === 10 && D.lostsoul.charge.time === 0.8, 'fiche lostsoul incorrecte');
+  assert(D.baron.hp === 600 && D.baron.melee === 25 && D.baron.ranged && D.baron.ranged.color === 'green' && D.baron.ranged.dmg === 25, 'fiche baron incorrecte');
+  for (const [k, d] of Object.entries(D)) assert(['hp', 'speed', 'melee', 'r', 'scale'].every(c => typeof d[c] === 'number'), `fiche ${k} : hp, speed, melee, r, scale doivent être des nombres`);
+});
+function testDessin(nomFn) {   // 5 poses : canvas 64×64, non vides, toutes différentes
+  if (typeOf(nomFn) !== 'function') return PAS_FAITE;
+  const f = (0, eval)(nomFn), empreintes = {};
+  for (const p of ['a', 'b', 'atk', 'pain', 'corpse']) {
+    const c = f(p);
+    assert(c && c.getContext && c.width === 64 && c.height === 64, `${nomFn}('${p}') doit renvoyer un canvas 64×64`);
+    const d = c.getContext('2d').getImageData(0, 0, 64, 64).data;
+    let n = 0, sig = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 128) { n++; sig = (sig * 31 + i + d[i - 3]) % 1000000007; }
+    assert(n > 80, `${nomFn}('${p}') : presque vide (${n} pixels opaques)`);
+    empreintes[p] = n + ':' + sig;
+  }
+  assert(new Set(Object.values(empreintes)).size === 5, `${nomFn} : les 5 poses doivent être différentes`);
+}
+test('[7b] drawCaco : 5 poses', () => testDessin('drawCaco'));
+test('[7c] drawSoldier : 5 poses', () => testDessin('drawSoldier'));
+test('[7d] drawLostSoul : 5 poses', () => testDessin('drawLostSoul'));
+test('[7e] drawBaron : 5 poses', () => testDessin('drawBaron'));
+test('[7f] sprites des 4 ennemis enregistrés, planche F2 lisible', () => {
+  if (!TX.cacoA) return PAS_FAITE;
+  const noms = [];
+  for (const t of ['caco', 'soldier', 'lostsoul', 'baron']) for (const p of ['A', 'B', 'Atk', 'Pain', 'Corpse']) noms.push(t + p);
+  noms.push('fireballBlue', 'fireballGreen');
+  for (const n of noms) {
+    assert(TX[n] && TX[n].px instanceof Uint32Array, `TX.${n} absent ou au mauvais format`);
+    assert(ASSET_LIST.includes(n), `« ${n} » absent de ASSET_LIST`);
+  }
+  const d = ctx.drawImage, hors = [];
+  ctx.drawImage = function (img, a, b, c, e, f, g, h, i) {
+    const [x, y, w, hh] = arguments.length >= 9 ? [f, g, h, i] : arguments.length >= 5 ? [a, b, c, e] : [a, b, img.width, img.height];
+    if (x < -1 || y < -1 || x + w > W + 1 || y + hh > H + 1) hors.push(`image en (${x | 0}, ${y | 0})`);
+    return d.apply(this, arguments);
+  };
+  horsEcran.length = 0;
+  try { drawAssetSheet(); } finally { ctx.drawImage = d; }
+  assert(!horsEcran.length && !hors.length, 'planche F2 : éléments hors de l\'écran : ' + horsEcran.concat(hors).slice(0, 3).join(' ; '));
+});
+test('[7g] caractères 3 4 5 6 dans les cartes', () => {
+  if (SPAWN['3'] !== 'caco') return PAS_FAITE;
+  const att = { '3': 'caco', '4': 'soldier', '5': 'lostsoul', '6': 'baron' };
+  for (const [c, t] of Object.entries(att)) assert(SPAWN[c] === t && LEGEND[c] === 0, `SPAWN['${c}'] = '${t}' et LEGEND['${c}'] = 0 attendus`);
+  avecCarte(['#######', '#P3456#', '#.....#', '###E###'], i => {
+    const types = loadLevel(i).enemies.map(e => e.type).join(',');
+    assert(types === 'caco,soldier,lostsoul,baron', 'ennemis chargés : ' + types);
+  });
+});
+test('[7h] boule de feu : vitesse, dégâts et couleur de la fiche', () => {
+  if (!/ranged/.test(srcDe('spawnFireball'))) return PAS_FAITE;
+  startGame(); const P = G.P;
+  for (const [type, v, dmg, col] of [['imp', 5, 12, 'fire'], ['caco', 4, 15, 'blue'], ['baron', 6, 25, 'green']]) {
+    const e = mkEnemy(type, P.x + 3, P.y); G.shots = []; spawnFireball(e);
+    const s = G.shots[0];
+    assert(s && Math.abs(Math.hypot(s.vx, s.vy) - v) < 1e-6 && s.dmg === dmg && s.color === col,
+      `${type} : vitesse ${s && Math.hypot(s.vx, s.vy)}, dmg ${s && s.dmg}, color ${s && s.color} (attendu ${v} / ${dmg} / ${col})`);
+  }
+  G.shots = [{ x: P.x + 0.2, y: P.y, vx: 0, vy: 0, life: 2, dmg: 25, color: 'green' }]; P.hp = 100; P.armor = 0;
+  updateShots(1 / 60);
+  assert(P.hp === 75, `boule de feu de 25 dégâts sur le joueur : PV ${P.hp} (attendu 75)`);
+});
+test('[7i] startRangedAttack : conditions et bascule en attaque', () => {
+  if (typeOf('startRangedAttack') !== 'function') return PAS_FAITE;
+  const r = Math.random; Math.random = () => 0;
+  try {
+    const e = mkEnemy('caco', 0, 0); e.state = 'chase'; e.cool = 0;
+    assert(startRangedAttack(e, 5, true, 1 / 60) === true && e.state === 'attack' && e.ranged === true && e.hitDone === false, 'caco à 5 cases, visible, prêt : doit passer en attaque à distance');
+    assert(e.cool >= 2 && e.cool <= 3, `recharge du caco : ${e.cool} (attendu entre 2 et 3)`);
+    const f = mkEnemy('caco', 0, 0); f.state = 'chase'; f.cool = 0;
+    assert(!startRangedAttack(f, 5, false, 1 / 60) && f.state === 'chase', 'ne doit pas tirer sans voir le joueur');
+    assert(!startRangedAttack(f, 1.5, true, 1 / 60) && !startRangedAttack(f, 13, true, 1 / 60), 'ne doit pas tirer hors de ]min, max[');
+    f.cool = 0.5; assert(!startRangedAttack(f, 5, true, 1 / 60), 'ne doit pas tirer pendant la recharge');
+    const s = mkEnemy('soldier', 0, 0); s.state = 'chase'; s.cool = 0;
+    assert(startRangedAttack(s, 5, true, 1 / 60) && s.state === 'attack', 'le soldat (hitscan) doit aussi attaquer à distance');
+    const p = mkEnemy('pinky', 0, 0); p.state = 'chase'; p.cool = 0;
+    assert(!startRangedAttack(p, 5, true, 1 / 60) && p.state === 'chase', 'le démon rose n\'attaque jamais à distance');
+  } finally { Math.random = r; }
+});
+test('[7j] enemyShoot : tir instantané du soldat', () => {
+  if (typeOf('enemyShoot') !== 'function') return PAS_FAITE;
+  startGame(); const P = G.P, r = Math.random;
+  for (const e of G.enemies) e.state = 'dead';
+  const s = mkEnemy('soldier', P.x + 3, P.y);           // salle de départ : ligne de vue libre
+  try {
+    Math.random = () => 0.99; P.hp = 100; P.armor = 0; enemyShoot(s);
+    assert(100 - P.hp >= 3 && 100 - P.hp <= 9, `tir réussi : ${100 - P.hp} dégâts (attendu 3 à 9)`);
+    Math.random = () => 0; P.hp = 100; enemyShoot(s);
+    assert(P.hp === 100, 'Math.random() < d / 25 : le tir doit rater');
+    Math.random = () => 0.99; P.hp = 100; s.x = 12.5; s.y = 3.5; enemyShoot(s);   // derrière les murs
+    assert(P.hp === 100, 'sans ligne de vue, le tir ne doit pas toucher');
+    assert(G.shots.length === 0, 'tir instantané : aucun projectile');
+  } finally { Math.random = r; }
+});
+test('[7k] updateCharge : l\'âme perdue fonce et frappe au contact', () => {
+  if (typeOf('updateCharge') !== 'function') return PAS_FAITE;
+  startGame(); const P = G.P;
+  for (const e of G.enemies) e.state = 'dead';
+  P.x = 11.5; P.y = 6.5; P.hp = 100; P.armor = 0;      // hangar
+  const L = mkEnemy('lostsoul', 11.5, 2.5); L.state = 'chase'; L.cool = 0; G.enemies.push(L);
+  assert(updateCharge(L, Math.hypot(P.x - L.x, P.y - L.y), true, 1 / 60) === true && L.state === 'charge', 'à 4 cases, visible, prête : doit passer en charge et renvoyer true');
+  assert(updateCharge(mkEnemy('imp', 0, 0), 3, true, 1 / 60) === false, 'un ennemi sans charge : doit renvoyer false');
+  let touche = false;
+  for (let k = 0; k < 120 && !touche; k++) { updateCharge(L, Math.hypot(P.x - L.x, P.y - L.y), true, 1 / 60); touche = P.hp < 100; }
+  assert(touche && P.hp === 90, `la charge doit toucher le joueur pour 10 dégâts (PV ${P.hp})`);
+  assert(L.state === 'chase', 'après le contact, retour en chase (état ' + L.state + ')');
+  const M = mkEnemy('lostsoul', 11.5, 2.5); M.state = 'chase'; M.cool = 0;
+  assert(!updateCharge(M, 4, false, 1 / 60) && M.state === 'chase', 'ne doit pas démarrer une charge sans voir le joueur');
+});
+test('[7l] IA générale : soldat, cacodémon, âme perdue, diablotin', () => {
+  if (!/startRangedAttack/.test(srcDe('updateEnemies'))) return PAS_FAITE;
+  const scene = (type, immobile) => {
+    startGame(); G.P.x = 11.5; G.P.y = 6.5; G.P.hp = 1e6; G.P.armor = 0;
+    const e = mkEnemy(type, 11.5, 2.5);
+    if (immobile) e.def = Object.assign({}, e.def, { speed: 0 });   // reste à 4 cases : test sans hasard
+    wake(e); G.enemies = [e]; return e;
+  };
+  let e = scene('soldier', true), blesse = false;
+  step(15, () => { if (G.P.hp < 1e6) blesse = true; });   // ~5 tirs à 16 % d'échec : faux échec ≈ 1 / 10 000
+  assert(blesse, 'le soldat doit blesser le joueur à distance en 15 s');
+  assert(!G.shots.length, 'le soldat ne doit pas lancer de projectile');
+  e = scene('caco', true); let bleue = false;
+  step(6, () => { if (G.shots.some(s => s.color === 'blue')) bleue = true; });
+  assert(bleue, 'le cacodémon doit lancer des boules de feu bleues');
+  e = scene('lostsoul', false); let charge = false;
+  step(4, () => { if (e.state === 'charge') charge = true; });
+  assert(charge && G.P.hp < 1e6, 'l\'âme perdue doit charger et toucher le joueur');
+  e = scene('imp', true); let feu = false;
+  step(6, () => { if (G.shots.some(s => !s.rocket)) feu = true; });
+  assert(feu, 'le diablotin doit toujours lancer des boules de feu');
+});
+test('[7m] sprites : charge, vol, couleur des boules de feu', () => {
+  if (!/fly/.test(srcDe('collectSprites'))) return PAS_FAITE;
+  startGame();
+  const l = mkEnemy('lostsoul', 3.5, 2.5); l.state = 'charge';
+  assert(enemyTex(l) === TX.lostsoulAtk, 'état charge : pose Atk attendue');
+  const c = mkEnemy('caco', 4.5, 2.5), m = mkEnemy('caco', 5.5, 2.5); m.state = 'dead'; m.t = 1;
+  G.enemies = [c, m]; G.items = []; G.fx = [];
+  G.shots = [{ x: 3, y: 3, vx: 0, vy: 0, life: 1, color: 'blue' }, { x: 3, y: 4, vx: 0, vy: 0, life: 1, color: 'green' }, { x: 4, y: 4, vx: 0, vy: 0, life: 1 }];
+  const sp = collectSprites(), de = (x, y) => sp.find(s => s.x === x && s.y === y);
+  assert(de(4.5, 2.5) && de(4.5, 2.5).z > 0.1, 'un cacodémon vivant doit voler (z > 0,1)');
+  assert(de(5.5, 2.5) && !de(5.5, 2.5).z, 'un cacodémon mort est au sol (z = 0)');
+  assert(de(3, 3).tex === TX.fireballBlue && de(3, 4).tex === TX.fireballGreen && de(4, 4).tex === TX.fireball, 'boules de feu : bleue, verte, normale');
+});
+test('[7n] le soldat lâche des balles en mourant', () => {
+  if (!/drop/.test(srcDe('damageEnemy'))) return PAS_FAITE;
+  startGame(); G.items = [];
+  const s = mkEnemy('soldier', 4.5, 2.5); G.enemies = [s];
+  damageEnemy(s, 999);
+  assert(s.state === 'dead', 'le soldat doit mourir');
+  if (ITEM_TEX.bullets) assert(G.items.length === 1 && G.items[0].type === 'bullets' && G.items[0].x === 4.5 && !G.items[0].taken, 'un objet « bullets » doit apparaître à sa place');
+  else assert(G.items.length === 0, 'sans objet « bullets » (tâche 2g pas faite), rien ne doit être ajouté');
+  const n = G.items.length; damageEnemy(s, 50);
+  assert(G.items.length === n, 'un ennemi déjà mort ne relâche rien');
+  const i = mkEnemy('imp', 5.5, 2.5); G.items = []; damageEnemy(i, 999);
+  assert(G.items.length === 0, 'un diablotin ne lâche rien');
+});
+function avecStockage(fn) {   // sauvegarde et restaure les niveaux de l'utilisateur autour du test
+  const cles = [CLE_NIVEAUX, CLE_TEST], sauve = {};
+  try { for (const k of cles) sauve[k] = localStorage.getItem(k); } catch (e) { return 'localStorage indisponible dans ce navigateur'; }
+  try { for (const k of cles) localStorage.removeItem(k); return fn(); }
+  finally { for (const k of cles) { if (sauve[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, sauve[k]); } }
+}
+function divCachee() { const d = document.createElement('div'); d.style.display = 'none'; document.body.appendChild(d); return d; }
+test('[13a] lireNiveauxPerso : ne garde que les cartes valides', () => {
+  if (typeOf('lireNiveauxPerso') !== 'function') return PAS_FAITE;
+  return avecStockage(() => {
+    assert(Array.isArray(lireNiveauxPerso()) && lireNiveauxPerso().length === 0, 'sans niveau enregistré : tableau vide attendu');
+    localStorage.setItem(CLE_NIVEAUX, '{pas du json');
+    assert(lireNiveauxPerso().length === 0, 'données illisibles : tableau vide attendu (sans exception)');
+    localStorage.setItem(CLE_NIVEAUX, JSON.stringify([{ name: 'ok', angle: 0, rows: CARTE_SECRET }, { name: 'cassée', rows: ['###', '#P#'] }, { rows: CARTE_SECRET }]));
+    const l = lireNiveauxPerso();
+    assert(l.length === 1 && l[0].name === 'ok', 'seule la carte valide et nommée doit être gardée ; obtenu ' + JSON.stringify(l.map(m => m.name)));
+  });
+});
+test('[13b] ecrireNiveauxPerso : enregistre name, angle, rows', () => {
+  if (typeOf('ecrireNiveauxPerso') !== 'function') return PAS_FAITE;
+  return avecStockage(() => {
+    assert(ecrireNiveauxPerso([{ name: 'A', rows: CARTE_SECRET, enTrop: 1 }]) === true, 'doit renvoyer true');
+    const brut = JSON.parse(localStorage.getItem(CLE_NIVEAUX));
+    assert(Array.isArray(brut) && brut.length === 1 && brut[0].name === 'A' && brut[0].angle === 0 && Array.isArray(brut[0].rows) && !('enTrop' in brut[0]),
+      'contenu enregistré incorrect : ' + JSON.stringify(brut));
+    if (typeOf('lireNiveauxPerso') === 'function') assert(lireNiveauxPerso().length === 1, 'relecture : 1 niveau attendu');
+  });
+});
+test('[13c] niveau de test : écrire puis relire', () => {
+  if (typeOf('ecrireNiveauTest') !== 'function' || typeOf('lireNiveauTest') !== 'function') return PAS_FAITE;
+  return avecStockage(() => {
+    assert(lireNiveauTest() === null, 'sans niveau de test : null attendu');
+    assert(ecrireNiveauTest({ name: 'T', rows: CARTE_SECRET }) === true, 'ecrireNiveauTest doit renvoyer true');
+    const t = lireNiveauTest();
+    assert(t && t.name === 'T' && t.rows.join() === CARTE_SECRET.join(), 'relecture incorrecte : ' + JSON.stringify(t));
+    localStorage.setItem(CLE_TEST, JSON.stringify({ name: 'X', rows: ['###'] }));
+    assert(lireNiveauTest() === null, 'carte de test invalide : null attendu');
+  });
+});
+test('[13d] niveaux enregistrés ajoutés au jeu, mode test #test', () => {
+  if (typeOf('preparerNiveaux') !== 'function' || !/preparerNiveaux/.test(srcDe('gameUpdate'))) return PAS_FAITE;
+  const n0 = MAPS.length, hash = location.hash;
+  return avecStockage(() => {
+    try {
+      ecrireNiveauxPerso([{ name: 'PERSO-TEST', angle: 0, rows: CARTE_SECRET }]);
+      G.niveauxPrets = false; G.state = 'title'; gameUpdate(1 / 60);
+      assert(MAPS.length === n0 + 1 && MAPS[n0].name === 'PERSO-TEST', 'le niveau enregistré doit être ajouté à la fin de MAPS (au titre)');
+      gameUpdate(1 / 60); preparerNiveaux();
+      assert(MAPS.length === n0 + 1, 'preparerNiveaux ne doit agir qu\'une seule fois');
+      MAPS.length = n0;
+      ecrireNiveauTest({ name: 'ESSAI', angle: 0, rows: CARTE_SECRET });
+      history.replaceState(null, '', '#test'); G.niveauxPrets = false; G.state = 'title'; preparerNiveaux();
+      assert(G.state === 'play' && G.modeTest === true && /ESSAI/.test(G.L.name), 'en mode #test, le niveau de test doit être lancé directement');
+    } finally {
+      MAPS.length = n0; history.replaceState(null, '', location.pathname + location.search + hash);
+      G.niveauxPrets = true; G.modeTest = false; startGame();
+    }
+  });
+});
+test('[13e] grilleVide : carte vierge valide', () => {
+  if (typeOf('grilleVide') !== 'function') return PAS_FAITE;
+  const g = grilleVide(12, 9);
+  assert(Array.isArray(g) && g.length === 9 && g.every(r => typeof r === 'string' && r.length === 12), 'grille 12 × 9 de chaînes attendue');
+  assert(!validateMap({ name: 't', rows: g }).length, 'la grille vide doit être valide : ' + validateMap({ name: 't', rows: g }).join(' ; '));
+  assert(g[1][1] === 'P' && g[8][10] === 'E' && g[0] === '#'.repeat(12), 'P en (1, 1), E en (w-2, h-1), bord en #');
+  const p = grilleVide(2, 999);
+  assert(p.length === ED_LIMITES.max && p[0].length === ED_LIMITES.min, 'largeur et hauteur bornées par ED_LIMITES');
+});
+test('[13f] peindre : immuable, règles du bord, départ unique', () => {
+  if (typeOf('peindre') !== 'function') return PAS_FAITE;
+  const g = grilleVide(10, 8), copie = g.join();
+  const a = peindre(g, 3, 3, '#');
+  assert(a !== g && a[3][3] === '#' && g.join() === copie, 'doit renvoyer un NOUVEAU tableau sans modifier l\'ancien');
+  assert(peindre(g, 0, 3, '.') === g, 'sol sur le bord : refusé (le même tableau est renvoyé)');
+  assert(peindre(g, 0, 3, '%')[3][0] === '%', 'mur sur le bord : accepté');
+  assert(peindre(g, 30, 3, '#') === g && peindre(g, 3, 3, 'Z') === g, 'hors carte ou caractère inconnu : refusé');
+  const b = peindre(g, 5, 5, 'P');
+  assert(b[5][5] === 'P' && b[1][1] === '.' && b.join('').split('P').length === 2, 'poser P doit retirer l\'ancien P');
+});
+test('[13g] redimensionner : garde l\'intérieur, bord refait', () => {
+  if (typeOf('redimensionner') !== 'function') return PAS_FAITE;
+  const g = peindre(grilleVide(10, 8), 3, 3, '1');
+  const r = redimensionner(g, 14, 10);
+  assert(r.length === 10 && r.every(l => l.length === 14), 'taille 14 × 10 attendue');
+  assert(r[3][3] === '1' && r[1][1] === 'P', 'l\'intérieur doit être recopié');
+  assert(!validateMap({ name: 't', rows: r }).length, 'carte agrandie invalide : ' + validateMap({ name: 't', rows: r }).join(' ; '));
+  const s = redimensionner(peindre(g, 7, 6, 'P'), 8, 8);
+  assert(!validateMap({ name: 't', rows: s }).length, 'carte réduite invalide (P et E doivent être remis si besoin) : ' + validateMap({ name: 't', rows: s }).join(' ; '));
+  assert(g[3][3] === '1' && g.length === 8, 'ne doit pas modifier la carte reçue');
+});
+test('[13h] export / import de carte en texte', () => {
+  if (typeOf('carteEnTexte') !== 'function' || typeOf('texteEnCarte') !== 'function') return PAS_FAITE;
+  const m = { name: "L'atelier", angle: 0, rows: grilleVide(9, 8) };
+  const txt = carteEnTexte(m);
+  assert(txt.includes("name: 'L\\'atelier'") && txt.includes('"' + m.rows[0] + '",') && /rows: \[/.test(txt), 'texte exporté incorrect : ' + txt.slice(0, 120));
+  const e = (0, eval)('(' + txt.trim().replace(/,\s*$/, '') + ')');
+  assert(e.rows.join() === m.rows.join() && e.name === "L'atelier", 'le texte exporté doit être du JavaScript valide qui reproduit la carte');
+  const r1 = texteEnCarte(m.rows.join('\n'));
+  assert(r1 && r1.rows.join() === m.rows.join(), 'relecture de lignes brutes');
+  const r2 = texteEnCarte(m.rows.map(l => '    "' + l + '",').join('\n') + '\n\n');
+  assert(r2 && r2.rows.join() === m.rows.join(), 'relecture de lignes entre guillemets avec virgule');
+  assert(texteEnCarte('####\n#P.\n####') === null && texteEnCarte('###\n#P#') === null, 'longueurs différentes ou moins de 3 lignes : null');
+});
+test('[13i] statistiques et chemin vers la sortie', () => {
+  if (typeOf('statistiques') !== 'function' || typeOf('cheminVersSortie') !== 'function') return PAS_FAITE;
+  const g = peindre(peindre(peindre(grilleVide(10, 8), 3, 3, '1'), 4, 3, '1'), 5, 3, 'H');
+  const s = statistiques(g);
+  assert(s.ennemis.imp === 2 && s.objets.medkit === 1 && s.total === 2, 'statistiques : ' + JSON.stringify(s));
+  assert(cheminVersSortie(g) === true, 'grille ouverte : la sortie doit être atteignable');
+  let mur = g;
+  for (let y = 1; y < 7; y++) mur = peindre(mur, 6, y, '#');
+  assert(cheminVersSortie(mur) === false, 'mur infranchissable : sortie inatteignable');
+  assert(cheminVersSortie(peindre(mur, 6, 4, '=')) === true, 'une porte dans le mur : de nouveau atteignable');
+});
+test('[13j] dessinerGrille : canvas à la taille de la carte', () => {
+  if (typeOf('dessinerGrille') !== 'function') return PAS_FAITE;
+  const c = document.createElement('canvas'), sauve = { canvas: ED.canvas, rows: ED.rows };
+  try {
+    ED.canvas = c; ED.rows = grilleVide(12, 9); dessinerGrille();
+    assert(c.width === 12 * ED.cell && c.height === 9 * ED.cell, `canvas ${c.width}×${c.height} (attendu ${12 * ED.cell}×${9 * ED.cell})`);
+    assert(c.getContext('2d').getImageData(ED.cell >> 1, ED.cell >> 1, 1, 1).data[3] > 0, 'la grille doit être dessinée');
+    ED.canvas = null; dessinerGrille();
+  } finally { Object.assign(ED, sauve); }
+});
+test('[13k] palette et liste des niveaux', () => {
+  if (typeOf('construirePalette') !== 'function' || typeOf('remplirListe') !== 'function') return PAS_FAITE;
+  const div = divCachee(), sauve = { racine: ED.racine, outil: ED.outil };
+  div.innerHTML = '<div id="ed-palette"></div><select id="ed-liste"></select>';
+  try {
+    ED.racine = div;
+    const n = construirePalette(), attendus = Object.keys(ED_NOMS).filter(c => c in LEGEND).length;
+    const btn = div.querySelectorAll('#ed-palette .outil');
+    assert(n === attendus && btn.length === attendus, `${btn.length} boutons, renvoie ${n} (attendu ${attendus})`);
+    const porte = [...btn].find(b => b.dataset.ch === '=');
+    assert(porte, 'bouton data-ch="=" absent');
+    porte.click();
+    assert(ED.outil === '=' && porte.classList.contains('actif'), 'un clic doit choisir l\'outil et marquer le bouton « actif »');
+    construirePalette();
+    assert(div.querySelectorAll('#ed-palette .outil').length === attendus, 'la palette doit être vidée avant d\'être remplie');
+    remplirListe();
+    const opts = [...div.querySelectorAll('#ed-liste option')].map(o => o.value);
+    assert(MAPS.every(m => opts.includes(m.name)), 'la liste doit contenir les niveaux de MAPS');
+  } finally { Object.assign(ED, sauve); div.remove(); }
+});
+test('[13l] validation affichée et peinture au clic', () => {
+  if (typeOf('afficherValidation') !== 'function' || typeOf('cliqueCase') !== 'function') return PAS_FAITE;
+  const div = divCachee(), sauve = { racine: ED.racine, canvas: ED.canvas, rows: ED.rows, outil: ED.outil };
+  div.innerHTML = '<div id="ed-infos"></div>';
+  const infos = () => div.querySelector('#ed-infos').textContent;
+  try {
+    ED.racine = div; ED.canvas = document.createElement('canvas'); ED.rows = grilleVide(10, 8);
+    assert(afficherValidation().length === 0 && /valide/i.test(infos()), 'grille vide : « Niveau valide » attendu ; affiché : ' + infos());
+    ED.outil = '1'; cliqueCase(3, 3);
+    assert(ED.rows[3][3] === '1', 'cliqueCase doit peindre l\'outil choisi');
+    assert(/imp|diablotin/i.test(infos()), 'les statistiques doivent apparaître ; affiché : ' + infos());
+    ED.outil = '.'; cliqueCase(1, 1);
+    assert(afficherValidation().length > 0 && /départ/i.test(infos()), 'sans départ : erreur affichée');
+    ED.rows = grilleVide(10, 8); ED.outil = '#';
+    for (let y = 1; y < 7; y++) cliqueCase(6, y);
+    assert(afficherValidation().some(e => /inatteignable/i.test(e)), 'sortie coupée par un mur : « sortie inatteignable » attendu');
+  } finally { Object.assign(ED, sauve); div.remove(); }
+});
+test('[13m] enregistrer, charger, tester, exporter', () => {
+  if (['enregistrerNiveau', 'chargerNiveau', 'testerNiveau', 'exporterNiveau'].some(n => typeOf(n) !== 'function')) return PAS_FAITE;
+  const div = divCachee(), sauve = { racine: ED.racine, canvas: ED.canvas, rows: ED.rows, nom: ED.nom, outil: ED.outil }, ouvre = window.open;
+  div.innerHTML = '<input id="ed-nom"><div id="ed-infos"></div><select id="ed-liste"></select><textarea id="ed-export"></textarea><div id="ed-palette"></div>';
+  let ouvert = null;
+  window.open = u => { ouvert = u; return null; };
+  try {
+    return avecStockage(() => {
+      ED.racine = div; ED.canvas = document.createElement('canvas'); ED.rows = grilleVide(10, 8);
+      div.querySelector('#ed-nom').value = 'Mon test';
+      assert(enregistrerNiveau() === true && lireNiveauxPerso().some(m => m.name === 'Mon test'), 'enregistrement attendu');
+      ED.rows = peindre(ED.rows, 3, 3, '2'); enregistrerNiveau();
+      assert(lireNiveauxPerso().filter(m => m.name === 'Mon test').length === 1, 'même nom : le niveau doit être remplacé, pas dupliqué');
+      ED.rows = peindre(ED.rows, 1, 1, '.');
+      assert(enregistrerNiveau() === false && testerNiveau() === false, 'niveau invalide : enregistrer et tester doivent être refusés');
+      assert(chargerNiveau(MAPS[0].name) === true && ED.rows.join() === MAPS[0].rows.join() && ED.rows !== MAPS[0].rows, 'charger E1 : copie de ses rangées attendue');
+      assert(chargerNiveau('Mon test') === true && ED.rows[3][3] === '2', 'charger un niveau enregistré');
+      assert(chargerNiveau('inconnu') === false, 'nom inconnu : false attendu');
+      assert(testerNiveau() === true && lireNiveauTest() && /index\.html#test/.test(String(ouvert)), 'tester : niveau de test écrit et jeu ouvert sur index.html#test');
+      const t = exporterNiveau();
+      assert(typeof t === 'string' && t.includes(ED.rows[0]) && div.querySelector('#ed-export').value === t, 'exporter : texte dans #ed-export, et renvoyé');
+    });
+  } finally { window.open = ouvre; Object.assign(ED, sauve); div.remove(); }
+});
+test('[13n] initEditeur : interface complète dans la racine', () => {
+  if (typeOf('initEditeur') !== 'function' || typeOf('construireInterface') !== 'function') return PAS_FAITE;
+  const div = divCachee(), sauve = { racine: ED.racine, canvas: ED.canvas, rows: ED.rows };
+  try {
+    const r = initEditeur(div);
+    assert(r === ED && ED.racine === div, 'initEditeur doit renvoyer ED et garder la racine');
+    const ids = ['ed-nom', 'ed-largeur', 'ed-hauteur', 'ed-nouveau', 'ed-redim', 'ed-enregistrer', 'ed-tester', 'ed-exporter', 'ed-liste', 'ed-charger', 'ed-palette', 'ed-grille', 'ed-infos', 'ed-export'];
+    const manque = ids.filter(id => !div.querySelector('#' + id));
+    assert(!manque.length, 'éléments manquants : ' + manque.join(', '));
+    assert(ED.canvas === div.querySelector('#ed-grille') && ED.rows.length === 16 && ED.rows[0].length === 24, 'grille 24 × 16 dans le canvas #ed-grille');
+    assert(div.querySelectorAll('#ed-palette .outil').length > 5, 'palette remplie');
+    assert(/valide/i.test(div.querySelector('#ed-infos').textContent), 'validation affichée');
+  } finally { Object.assign(ED, sauve); div.remove(); }
+});
+test('[3a] le joueur commence sans armure (armor = 0)', () => {
+  const p = newPlayer();
+  if (!('armor' in p)) return PAS_FAITE;
+  assert(p.armor === 0, 'armor vaut ' + p.armor);
+  assert(['hp', 'shells', 'hasShotgun', 'weapon', 'hurt'].every(k => k in p), 'des champs existants du joueur ont disparu');
+});
+test('[3b] l\'armure absorbe un tiers des dégâts', () => {
+  if (!/armor/.test(srcDe('hurtPlayer'))) return PAS_FAITE;
+  startGame(); const o = { x: G.P.x + 1, y: G.P.y };
+  G.P.hp = 100; G.P.armor = 50; hurtPlayer(30, o);
+  assert(G.P.hp === 80 && G.P.armor === 40, `30 dégâts avec 50 d'armure : hp=${G.P.hp} armor=${G.P.armor} (attendu 80 / 40)`);
+  assert(G.P.hurt > 0, 'le flash rouge de douleur (P.hurt) a disparu');
+  G.P.hp = 100; G.P.armor = 0; hurtPlayer(30, o);
+  assert(G.P.hp === 70, `sans armure : hp=${G.P.hp} (attendu 70)`);
+  G.P.hp = 100; G.P.armor = 4; hurtPlayer(30, o);
+  assert(G.P.armor === 0 && G.P.hp === 74, `armure presque vide (4) : hp=${G.P.hp} armor=${G.P.armor} (attendu 74 / 0)`);
+});
+test('[3c] objet armure « V » : +50, plafonné à 100, refusé si plein', () => {
+  if (ITEM['V'] !== 'armor') return PAS_FAITE;
+  assert(LEGEND['V'] === 0, 'V doit être praticable (LEGEND[\'V\'] = 0)');
+  assert(TX.armor && TX.armor.px instanceof Uint32Array, 'texture TX.armor absente ou au mauvais format');
+  assert(ITEM_TEX.armor && ITEM_TEX.armor() === TX.armor && ITEM_SCALE.armor > 0, 'ITEM_TEX / ITEM_SCALE de l\'armure manquants');
+  assert(MAPS.some((m, i) => loadLevel(i).items.some(it => it.type === 'armor')), 'aucune armure placée dans les cartes');
+  startGame();
+  const it = { type: 'armor', x: G.P.x, y: G.P.y, taken: false };
+  G.items = [it]; G.P.armor = 30; updatePickups();
+  assert(it.taken && G.P.armor === 80, `ramassage : armure ${G.P.armor} (attendu 80)`);
+  it.taken = false; updatePickups();
+  assert(G.P.armor === 100, `plafond : armure ${G.P.armor} (attendu 100)`);
+  it.taken = false; updatePickups();
+  assert(!it.taken, 'avec 100 d\'armure, l\'objet doit rester au sol');
+});
+test('[3d] l\'armure est affichée dans la barre du HUD', () => {
+  if (!/ARMURE/.test(srcDe('drawHUD'))) return PAS_FAITE;
+  startGame(); G.P.armor = 50;
+  const t = textesDessines(() => drawHUD());
+  assert(/ARMURE/.test(t) && /50/.test(t), 'texte « ARMURE 50% » non dessiné ; dessiné : ' + t);
+});
+test('[4a] mur secret « $ » : brique dans la grille, noté dans L.secrets', () => {
+  if (LEGEND['$'] === undefined) return PAS_FAITE;
+  avecCarte(CARTE_SECRET, i => {
+    const e = validateMap(MAPS[i]);
+    assert(!e.length, 'carte de test refusée : ' + e.join(' ; '));
+    const L = loadLevel(i);
+    assert(L.grid[1 * L.w + 3] === CELL_BRICK, 'la case $ doit être une brique (code 1) dans L.grid');
+    assert(Array.isArray(L.secrets) && L.secrets.length === 1 && L.secrets[0].x === 3 && L.secrets[0].y === 1 && L.secrets[0].found === false,
+      'L.secrets incorrect : ' + JSON.stringify(L.secrets));
+  });
+  assert(Array.isArray(loadLevel(0).secrets), 'L.secrets doit exister (liste vide) même dans un niveau sans secret');
+});
+test('[4b] E devant un mur secret l\'ouvre ; la sortie marche toujours', () => {
+  if (!/secrets/.test(srcDe('useAction'))) return PAS_FAITE;
+  avecCarte(CARTE_SECRET, i => {
+    startLevel(i); G.P.x = 2.5; G.P.y = 1.5; G.P.a = 0;
+    press('KeyE');
+    assert(G.L.grid[1 * G.L.w + 3] === CELL_EMPTY, 'le mur secret ne s\'est pas ouvert');
+    assert(G.L.secrets[0].found === true, 'secret non marqué found = true');
+    assert(G.state === 'play', 'ouvrir un secret ne doit pas terminer le niveau');
+    G.P.x = 4.5; G.P.y = 2.5; G.P.a = Math.PI / 2; press('KeyE');
+    assert(G.state === 'clear', 'la sortie ne fonctionne plus');
+  });
+});
+test('[4c] panneau de fin : ligne « Secrets : n / total »', () => {
+  if (!/Secrets/.test(srcDe('gameDraw'))) return PAS_FAITE;
+  startGame(); G.state = 'clear'; G.stateT = 2;
+  const s = G.L.secrets || [], n = s.filter(x => x.found).length;
+  const t = textesDessines(() => gameDraw());
+  assert(new RegExp(`Secrets\\s*:\\s*${n}\\s*/\\s*${s.length}`).test(t), `ligne « Secrets : ${n} / ${s.length} » absente ; dessiné : ` + t);
+});
+test('[5a] G.skill existe (1 = normal par défaut)', () => {
+  if (!('skill' in G)) return PAS_FAITE;
+  assert([0, 1, 2].includes(G.skill), 'G.skill vaut ' + G.skill);
+});
+test('[5b] l\'écran titre affiche la difficulté', () => {
+  if (!/Difficult/.test(srcDe('drawTitle'))) return PAS_FAITE;
+  const t = textesDessines(() => drawTitle());
+  assert(/Facile/.test(t) && /Normal/.test(t) && /Difficile/.test(t), 'Facile / Normal / Difficile non affichés ; dessiné : ' + t);
+});
+test('[5c] flèches ← → au titre : difficulté de 0 à 2', () => {
+  if (!/skill/.test(srcDe('gameUpdate'))) return PAS_FAITE;
+  try {
+    G.state = 'title'; G.skill = 1;
+    press('ArrowRight'); assert(G.skill === 2, '→ depuis Normal doit donner 2 (vaut ' + G.skill + ')');
+    press('ArrowRight'); assert(G.skill === 2, 'ne doit pas dépasser 2');
+    press('ArrowLeft'); press('ArrowLeft'); press('ArrowLeft');
+    assert(G.skill === 0, 'ne doit pas descendre sous 0 (vaut ' + G.skill + ')');
+    assert(G.state === 'title', 'les flèches ne doivent pas lancer la partie');
+  } finally { G.skill = 1; }
+});
+test('[5d] difficulté : PV et nombre des ennemis', () => {
+  if (!/skill/.test(srcDe('startLevel'))) return PAS_FAITE;
+  const total = loadLevel(0).enemies.length, reste = total - Math.floor(total / 3);
+  try {
+    G.skill = 2; startGame();
+    assert(G.enemies.length === total, 'en difficile, tous les ennemis doivent être présents');
+    assert(G.enemies.every(e => Math.abs(e.hp - ENEMY_DEF[e.type].hp * 1.4) <= 1), 'PV ×1,4 attendus en difficile');
+    G.skill = 0; startGame();
+    assert(G.enemies.length === reste, `en facile : ${G.enemies.length} ennemis au lieu de ${reste} (un sur trois retiré)`);
+    assert(G.enemies.every(e => Math.abs(e.hp - ENEMY_DEF[e.type].hp * 0.7) <= 1), 'PV ×0,7 attendus en facile');
+    assert(G.total === G.enemies.length, 'G.total doit compter les ennemis réellement présents');
+  } finally { G.skill = 1; startGame(); }
+});
+test('[5e] difficulté : dégâts reçus ×0,6 / ×1 / ×1,5', () => {
+  if (!/skill/.test(srcDe('hurtPlayer'))) return PAS_FAITE;
+  try {
+    for (const [s, attendu] of [[0, 94], [1, 90], [2, 85]]) {
+      G.skill = s; startGame(); G.P.hp = 100; G.P.armor = 0; hurtPlayer(10, { x: 0, y: 0 });
+      assert(G.P.hp === attendu, `difficulté ${s} : 10 dégâts → hp ${G.P.hp} (attendu ${attendu})`);
+    }
+  } finally { G.skill = 1; startGame(); }
+});
+
+/* ---------------- 8. tests d'acceptation : clés, ciel et lave, lumière, musique, mort, options, progression ---------------- */
+group('8. Tests d\'acceptation (suite) : clés, décor, lumière, musique, mort, options, progression');
+const CARTE_CLE = ['#########', '#Pr.R...#', '######E##'];
+const CARTE_LAVE = ['########', '#P~~~~~#', '#~~~~~~#', '#~~~~~~#', '####E###'];
+const CARTE_SOMBRE = { name: 'TEST', angle: 0, rows: ['######', '#P...#', '#....#', '##E###'], light: ['999999', '992209', '9f2229', '999999'] };
+function avecCle(cle, fn) {   // sauvegarde et restaure une clé du localStorage de l'utilisateur autour du test
+  let ancien;
+  try { ancien = localStorage.getItem(cle); } catch (e) { return 'localStorage indisponible dans ce navigateur'; }
+  try { return fn(); } finally { if (ancien === null) localStorage.removeItem(cle); else localStorage.setItem(cle, ancien); }
+}
+function audioFactice() {   // faux contexte WebAudio qui compte les notes programmées
+  const noeud = () => ({ connect: x => x, start() {}, stop() {}, type: '', buffer: null,
+    frequency: { value: 0, setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+    gain: { value: 1, setValueAtTime() {}, exponentialRampToValueAtTime() {} } });
+  return { currentTime: 10, state: 'running', sampleRate: 8000, destination: {}, notes: 0,
+    createOscillator() { this.notes++; return noeud(); }, createBufferSource() { this.notes++; return noeud(); },
+    createGain: noeud, createBiquadFilter: noeud, resume() {},
+    createBuffer() { return { getChannelData: () => new Float32Array(16) }; } };
+}
+function placerDevantSortie() {
+  const L = G.L;
+  for (let y = 0; y < L.h; y++) for (let x = 0; x < L.w; x++) if (L.grid[y * L.w + x] === CELL_EXIT) {
+    const d = [[0, 1], [0, -1], [1, 0], [-1, 0]].find(([dx, dy]) => L.grid[(y - dy) * L.w + (x - dx)] === CELL_EMPTY);
+    if (!d) continue;
+    G.P.x = x - d[0] + 0.5; G.P.y = y - d[1] + 0.5; G.P.a = Math.atan2(d[1], d[0]); return;
+  }
+}
+
+test('[3e] portes verrouillées R B J et clés r b j', () => {
+  if (LEGEND['R'] === undefined) return PAS_FAITE;
+  for (const c of 'RBJ') assert(LEGEND[c] === CELL_DOOR, `LEGEND['${c}'] doit valoir 3 (porte)`);
+  for (const [c, t] of [['r', 'keyRed'], ['b', 'keyBlue'], ['j', 'keyYellow']]) assert(LEGEND[c] === 0 && ITEM[c] === t, `clé '${c}' : LEGEND 0 et ITEM '${t}' attendus`);
+});
+test('[3f] validateMap : portes verrouillées encadrées, clé obligatoire', () => {
+  if (!/clé/.test(srcDe('validateMap'))) return PAS_FAITE;
+  const v = rows => validateMap({ name: 't', rows });
+  assert(!v(CARTE_CLE).length, 'carte correcte refusée : ' + v(CARTE_CLE).join(' ; '));
+  assert(v(['#########', '#P..R...#', '######E##']).some(e => /clé rouge/i.test(e)), 'porte rouge sans clé : erreur « clé rouge » attendue');
+  assert(v(['#########', '#P.r.R#.#', '######E##']).some(e => /encadr/i.test(e)), 'porte rouge mal encadrée : erreur attendue');
+  assert(!v(['########', '#P.b...#', '#####E##']).length, 'une clé sans porte est permise');
+});
+test('[3g] loadLevel : porte verrouillée avec sa couleur', () => {
+  if (!/key/.test(srcDe('loadLevel'))) return PAS_FAITE;
+  avecCarte(CARTE_CLE, i => {
+    const L = loadLevel(i);
+    assert(L.doors.length === 1 && L.doors[0].key === 'red' && L.doorAt[1 * L.w + 4] === 0 && L.doors[0].plane === 'x', 'porte rouge : ' + JSON.stringify(L.doors));
+    assert(L.items.some(it => it.type === 'keyRed'), 'clé rouge attendue dans L.items');
+  });
+  assert(loadLevel(0).doors.every(d => d.key === null), 'les portes « = » doivent avoir key: null');
+});
+test('[3h] clés du joueur, remises à zéro à chaque niveau', () => {
+  const p = newPlayer();
+  if (!('keys' in p)) return PAS_FAITE;
+  assert(p.keys && typeof p.keys === 'object' && !Object.keys(p.keys).length, 'newPlayer : keys doit valoir {}');
+  startGame(); G.P.keys.red = true; startLevel(1);
+  assert(!G.P.keys.red, 'un nouveau niveau doit commencer sans clé');
+  startGame();
+});
+test('[3i] porte verrouillée : clé obligatoire, les ennemis ne l\'ouvrent pas', () => {
+  if (!/keys/.test(srcDe('updateDoors'))) return PAS_FAITE;
+  avecCarte(CARTE_CLE, i => {
+    startLevel(i); const D = G.L.doors[0], P = G.P;
+    for (const e of G.enemies) e.state = 'dead';
+    P.keys = {}; P.x = 3.5; P.y = 1.5; G.msgT = 0; G.msg = '';
+    step(1);
+    assert(D.open === 0, 'sans clé, la porte doit rester fermée');
+    assert(/clé rouge/i.test(G.msg), 'message « Il faut la clé rouge » attendu ; message : ' + G.msg);
+    P.keys.red = true; step(1.2);
+    assert(D.open === 1, 'avec la clé rouge, la porte doit s\'ouvrir');
+    D.open = 0; D.state = 'closed'; P.x = 1.5; P.keys = {};
+    const e = mkEnemy('imp', 5.5, 1.5); G.enemies = [e];
+    step(1);
+    assert(D.open === 0, 'un ennemi ne doit pas ouvrir une porte verrouillée');
+  });
+});
+test('[3j-tex] buildKeyTextures : portes opaques, clés visibles (vérifié dès l\'écriture de la fonction)', () => {
+  if (typeOf('buildKeyTextures') !== 'function') return PAS_FAITE;
+  buildKeyTextures();
+  texturesVisibles(['doorRed', 'doorBlue', 'doorYellow'], 1);
+  texturesVisibles(['keyRed', 'keyBlue', 'keyYellow'], 0.06);
+});
+test('[3j] portes et clés de couleur : textures et rendu', () => {
+  if (!TX.doorRed) return PAS_FAITE;
+  for (const n of ['doorRed', 'doorBlue', 'doorYellow', 'keyRed', 'keyBlue', 'keyYellow'])
+    assert(TX[n] && TX[n].px instanceof Uint32Array && ASSET_LIST.includes(n), `TX.${n} absent, au mauvais format ou pas dans ASSET_LIST`);
+  for (const n of ['doorRed', 'doorBlue', 'doorYellow']) assert(TX[n].w === 64 && TX[n].h === 64 && !TX[n].px.some(c => c === 0), `${n} : 64×64 opaque attendu`);
+  avecCarte(CARTE_CLE, i => {
+    const L = loadLevel(i), vue = { x: 2.5, y: 1.5, a: 0 };
+    const rouges = () => { let n = 0; for (let k = 0; k < FB.length; k += 3) { const c = FB[k], r = c & 255, g = (c >> 8) & 255, b = (c >> 16) & 255; if (r > 130 && g < 90 && b < 90) n++; } return n; };
+    render3D(vue, L, []); const avec = rouges();
+    L.doors[0].key = null; render3D(vue, L, []); const sans = rouges();
+    assert(avec > sans + 40, `la porte rouge doit être dessinée avec TX.doorRed (pixels rouges : ${avec} contre ${sans} sans clé)`);
+  });
+});
+test('[3k] ramasser une clé, clés au HUD et sur la carte', () => {
+  if (!ITEM_TEX.keyRed) return PAS_FAITE;
+  assert(ITEM_TEX.keyRed() === TX.keyRed && ITEM_SCALE.keyRed > 0 && ITEM_TEX.keyBlue && ITEM_TEX.keyYellow, 'ITEM_TEX / ITEM_SCALE des clés incomplets');
+  startGame(); const P = G.P; P.keys = {};
+  const it = { type: 'keyBlue', x: P.x, y: P.y, taken: false }; G.items = [it]; updatePickups();
+  assert(it.taken && P.keys.blue === true && /clé bleue/i.test(G.msg), 'clé bleue : P.keys.blue = true et message « Clé bleue ! » attendus');
+  assert(/key/.test(srcDe('drawMinimap')), 'drawMinimap doit colorer les portes verrouillées (D.key)');
+  const rects = keys => {
+    P.keys = keys; const n = [], f = ctx.fillRect;
+    ctx.fillRect = function (x, y, w, h) { if (y >= PLAY_H) n.push([x, y, w, h].map(v => Math.round(v)).join()); return f.apply(this, arguments); };
+    try { drawHUD(); } finally { ctx.fillRect = f; }
+    return n;
+  };
+  const sans = rects({}), avec = rects({ red: true, blue: true, yellow: true });
+  const nouveaux = avec.filter(r => { const k = sans.indexOf(r); if (k >= 0) { sans.splice(k, 1); return false; } return true; });
+  assert(nouveaux.length >= 3, `HUD : un carré par clé attendu (${nouveaux.length} nouveaux rectangles)`);
+  assert(!nouveaux.some(r => { const [x, , w] = r.split(',').map(Number); return x < 263 && x + w > 217; }), 'carrés de clés sous le visage');
+});
+test('[6b-tex] buildDecor : ciel et lave opaques (vérifié dès l\'écriture de la fonction)', () => {
+  if (typeOf('buildDecor') !== 'function') return PAS_FAITE;
+  buildDecor();
+  texturesVisibles(['sky', 'lava'], 1);
+});
+test('[6b] textures du ciel et de la lave', () => {
+  if (!TX.sky) return PAS_FAITE;
+  assert(TX.sky.w === 256 && TX.sky.h === 64 && !TX.sky.px.some(c => c === 0), 'TX.sky : 256×64 opaque attendu');
+  assert(TX.lava && TX.lava.w === 64 && TX.lava.h === 64 && !TX.lava.px.some(c => c === 0), 'TX.lava : 64×64 opaque attendu');
+  assert(ASSET_LIST.includes('sky') && ASSET_LIST.includes('lava'), "'sky' et 'lava' doivent être dans ASSET_LIST");
+});
+test('[6c] lave « ~ » et ciel dans loadLevel', () => {
+  if (LEGEND['~'] === undefined) return PAS_FAITE;
+  assert(LEGEND['~'] === 0, "'~' doit être praticable (0)");
+  MAPS.push({ name: 'TEST', angle: 0, sky: true, rows: CARTE_LAVE });
+  try {
+    const L = loadLevel(MAPS.length - 1);
+    assert(L.sky === true, 'L.sky doit valoir true pour une carte sky: true');
+    assert(L.floorType instanceof Uint8Array && L.floorType.length === L.w * L.h && L.floorType[1 * L.w + 2] === 1 && L.floorType[1 * L.w + 1] === 0, 'L.floorType : 1 sur les cases ~, 0 ailleurs');
+  } finally { MAPS.pop(); }
+  assert(loadLevel(0).sky === false, 'une carte sans sky : L.sky = false');
+});
+test('[6d] rendu : ciel au plafond, lave au sol', () => {
+  if (!/sky/.test(srcDe('renderFloorCeil'))) return PAS_FAITE;
+  MAPS.push({ name: 'TEST', angle: 0, sky: true, rows: CARTE_LAVE });
+  try {
+    const L = loadLevel(MAPS.length - 1), ciel = new Set(TX.sky.px), lave = new Set(TX.lava.px);
+    const part = (y0, y1, set) => { let n = 0, t = 0; for (let y = y0; y < y1; y += 3) for (let x = 0; x < W; x += 7) { t++; if (set.has(FB[y * W + x])) n++; } return n / t; };
+    render3D({ x: 1.5, y: 1.5, a: 0.6 }, L, []);
+    assert(part(0, 30, ciel) > 0.9, 'en haut de l\'écran, le plafond doit montrer TX.sky (sans assombrissement)');
+    assert(part(PLAY_H - 30, PLAY_H, lave) > 0.6, 'au sol, les cases ~ doivent montrer TX.lava à pleine lumière');
+    const avant = FB.slice(0, W * 20); render3D({ x: 1.5, y: 1.5, a: 1.4 }, L, []);
+    assert(FB.slice(0, W * 20).some((c, k) => c !== avant[k]), 'le ciel doit défiler quand on tourne');
+    L.sky = false; render3D({ x: 1.5, y: 1.5, a: 0.6 }, L, []);
+    assert(part(0, 30, ciel) < 0.5, 'sans ciel : plafond normal');
+  } finally { MAPS.pop(); }
+});
+test('[6e] la lave brûle : 5 dégâts toutes les 0,5 s', () => {
+  if (!/lava/i.test(srcDe('updatePlay'))) return PAS_FAITE;
+  avecCarte(CARTE_LAVE, i => {
+    startLevel(i); const P = G.P; for (const e of G.enemies) e.state = 'dead';
+    P.x = 3.5; P.y = 2.5; P.hp = 100; P.armor = 0;
+    step(1.05);
+    assert(P.hp >= 85 && P.hp <= 90, `après 1 s sur la lave : PV ${P.hp} (attendu 85 à 90)`);
+    P.x = 1.5; P.y = 1.5; const hp = P.hp; step(1.05);
+    assert(P.hp === hp, 'hors de la lave : aucun dégât');
+  });
+});
+test('[8a] loadLevel : lumière par case et néons', () => {
+  if (!/light/.test(srcDe('loadLevel'))) return PAS_FAITE;
+  MAPS.push(CARTE_SOMBRE);
+  try {
+    const L = loadLevel(MAPS.length - 1);
+    assert(L.light instanceof Float32Array && L.light.length === L.w * L.h, 'L.light : Float32Array de w × h');
+    assert(Math.abs(L.light[1 * L.w + 3] - 2 / 9) < 1e-6 && L.light[1 * L.w + 4] === 0 && L.light[1 * L.w + 1] === 1, 'L.light = chiffre / 9');
+    assert(JSON.stringify(L.flicker) === JSON.stringify([2 * L.w + 1]) && L.light[2 * L.w + 1] === 1, 'L.flicker : indices des cases f (lumière 1) ; obtenu ' + JSON.stringify(L.flicker));
+  } finally { MAPS.pop(); }
+  const L0 = loadLevel(0);
+  assert(L0.light && L0.light.every(v => v === 1) && Array.isArray(L0.flicker) && !L0.flicker.length, 'sans light : tout à 1, flicker vide');
+});
+test('[8b] lumiere() et rendu assombri', () => {
+  if (!/light/.test(srcDe('lumiere'))) return PAS_FAITE;
+  const L = { w: 3, h: 2, light: Float32Array.from([1, 0.5, 0, 1, 1, 1]) };
+  assert(lumiere(L, 1, 0) === 0.5 && lumiere(L, 2, 0) === 0 && lumiere(L, 9, 9) === 1 && lumiere({ w: 3, h: 2 }, 1, 1) === 1, 'lumiere(L, x, y) : valeur de L.light ; 1 hors carte ou sans light');
+  const lum = () => { let s = 0; for (let k = 0; k < FB.length; k += 5) { const c = FB[k]; s += (c & 255) + ((c >> 8) & 255) + ((c >> 16) & 255); } return s; };
+  startGame(); const L1 = G.L, vue = { x: 2.5, y: 2.5, a: 0.3 }, spr = [{ x: 4.5, y: 3, tex: TX.impA, scale: 0.9 }];
+  L1.light = new Float32Array(L1.w * L1.h).fill(1); render3D(vue, L1, spr); const clair = lum();
+  L1.light.fill(0.2); render3D(vue, L1, spr); const sombre = lum();
+  assert(sombre < clair * 0.35, `pièce à 20 % de lumière : image trop claire (${Math.round(sombre / clair * 100)} % de la luminosité normale)`);
+  startGame();
+});
+test('[8c] les néons clignotent', () => {
+  if (!/flicker/.test(srcDe('updateWorld'))) return PAS_FAITE;
+  MAPS.push(CARTE_SOMBRE);
+  try {
+    startLevel(MAPS.length - 1); for (const e of G.enemies) e.state = 'dead';
+    const i = 2 * G.L.w + 1, vus = new Set();
+    for (let k = 0; k < 180; k++) { updateWorld(1 / 60); vus.add(Math.round(G.L.light[i] * 10) / 10); }
+    assert(vus.has(0.3) && vus.has(1), 'la case f doit alterner entre 0,3 et 1 ; valeurs vues : ' + [...vus].join(', '));
+    assert(G.L.light[1 * G.L.w + 3] < 0.25, 'les autres cases ne doivent pas changer');
+  } finally { MAPS.pop(); startGame(); }
+});
+test('[8d] validateMap vérifie la carte de lumière', () => {
+  if (!/light/.test(srcDe('validateMap'))) return PAS_FAITE;
+  assert(!validateMap(CARTE_SOMBRE).length, 'carte de lumière correcte refusée : ' + validateMap(CARTE_SOMBRE).join(' ; '));
+  assert(validateMap(Object.assign({}, CARTE_SOMBRE, { light: ['999999', '999999'] })).length > 0, 'dimensions différentes : erreur attendue');
+  assert(validateMap(Object.assign({}, CARTE_SOMBRE, { light: ['999999', '99x999', '999999', '999999'] })).length > 0, 'caractère interdit : erreur attendue');
+});
+test('[9a] musique : démarrage, une seule boucle, arrêt', () => {
+  if (typeOf('musicStart') !== 'function' || typeOf('musicStop') !== 'function' || typeOf('MUSIQUE') === 'undefined') return PAS_FAITE;
+  const sauve = [AC, MASTER, NOISE];
+  try {
+    AC = null; musicStop(); musicStart();
+    assert(!MUSIQUE.timer, 'sans audio (AC nul), musicStart ne doit rien lancer');
+    const f = audioFactice(); AC = f; MASTER = f.createGain(); NOISE = {};
+    MUSIQUE.actif = true; musicStart();
+    assert(MUSIQUE.timer, 'musicStart doit lancer la boucle (MUSIQUE.timer)');
+    assert(f.notes > 0, 'musicStart doit programmer des notes tout de suite');
+    const t = MUSIQUE.timer; musicStart();
+    assert(MUSIQUE.timer === t, 'un second musicStart ne doit pas lancer une seconde boucle');
+    musicStop();
+    assert(!MUSIQUE.timer, 'musicStop doit arrêter la boucle');
+    MUSIQUE.actif = false; musicStart();
+    assert(!MUSIQUE.timer, 'musique désactivée : musicStart ne doit rien lancer');
+  } finally { musicStop(); MUSIQUE.actif = true; [AC, MASTER, NOISE] = sauve; }
+});
+test('[9b] musique au début du niveau, arrêt hors du jeu', () => {
+  if (!/musicStart/.test(srcDe('startLevel')) || !/musicStop/.test(srcDe('gameUpdate'))) return PAS_FAITE;
+  const sauve = [AC, MASTER, NOISE];
+  try {
+    const f = audioFactice(); AC = f; MASTER = f.createGain(); NOISE = {}; MUSIQUE.actif = true; musicStop();
+    startGame();
+    assert(MUSIQUE.timer, 'startLevel doit lancer la musique');
+    G.state = 'dead'; G.stateT = 0; gameUpdate(1 / 60);
+    assert(!MUSIQUE.timer, 'hors du jeu (mort), la musique doit s\'arrêter');
+  } finally { musicStop(); [AC, MASTER, NOISE] = sauve; startGame(); musicStop(); }
+});
+test('[9c] touche M : musique oui / non', () => {
+  if (!/KeyM/.test(srcDe('updatePlay'))) return PAS_FAITE;
+  startGame(); MUSIQUE.actif = true;
+  press('KeyM'); assert(MUSIQUE.actif === false && /musique/i.test(G.msg), 'M : musique coupée et message attendus');
+  press('KeyM'); assert(MUSIQUE.actif === true, 'M de nouveau : musique remise');
+  musicStop();
+});
+test('[10a] mort : la caméra tombe au sol', () => {
+  if (!/\bz\s*:/.test(srcDe('gameDraw'))) return PAS_FAITE;
+  const r = render3D; let vue = null;
+  window.render3D = function (v) { vue = v; return r.apply(this, arguments); };
+  try {
+    startGame(); G.state = 'dead'; G.stateT = 0.5; gameDraw();
+    assert(vue && Math.abs(vue.z - 0.3) < 0.02, `mort depuis 0,5 s : z = ${vue && vue.z} (attendu 0,3)`);
+    G.stateT = 3; gameDraw(); assert(Math.abs(vue.z - 0.1) < 1e-9, 'z ne doit pas descendre sous 0,1');
+    G.state = 'play'; gameDraw(); assert(vue.z === undefined || vue.z === 0.5, 'en jeu : hauteur normale');
+  } finally { window.render3D = r; startGame(); }
+});
+test('[10b] fondu entre les niveaux', () => {
+  if (typeOf('startMelt') !== 'function' || !/melt/i.test(srcDe('gameUpdate')) || !/melt/i.test(srcDe('gameDraw'))) return PAS_FAITE;
+  startGame(); G.melt = null; startMelt();
+  assert(G.melt && G.melt.img && G.melt.img.width === W && G.melt.img.height === H && G.melt.t === 0, 'G.melt = { img (canvas W × H), t: 0, off } attendu');
+  assert(Array.isArray(G.melt.off) && G.melt.off.length >= W / 2, 'off : au moins W / 2 décalages');
+  const d = ctx.drawImage; let vu = false;
+  ctx.drawImage = function (img) { if (G.melt && img === G.melt.img) vu = true; return d.apply(this, arguments); };
+  try { gameDraw(); } finally { ctx.drawImage = d; }
+  assert(vu, 'gameDraw doit dessiner l\'ancienne image par-dessus pendant le fondu');
+  step(1.3); assert(!G.melt, 'le fondu doit disparaître après 1,2 s');
+  G.state = 'clear'; G.stateT = 1; G.level = 0; press('Enter');
+  assert(G.melt && G.level === 1, 'passer au niveau suivant doit lancer le fondu');
+  G.melt = null; startGame();
+});
+test('[11a] réglages : lecture, valeurs par défaut, sauvegarde', () => {
+  if (typeOf('SETTINGS') === 'undefined' || typeOf('sauverReglages') !== 'function' || typeOf('lireReglages') !== 'function') return PAS_FAITE;
+  assert(typeof SETTINGS.sens === 'number' && typeof SETTINGS.volume === 'number' && typeof SETTINGS.music === 'boolean', 'SETTINGS : sens et volume (nombres), music (booléen)');
+  const avant = Object.assign({}, SETTINGS);
+  return avecCle('doomed_settings', () => {
+    try {
+      localStorage.setItem('doomed_settings', '{pas du json'); assert(JSON.stringify(lireReglages()) === '{}', 'données illisibles : {} attendu');
+      SETTINGS.sens = 1.5; assert(sauverReglages() === true, 'sauverReglages doit renvoyer true');
+      assert(lireReglages().sens === 1.5, 'relecture : sens 1,5 attendu');
+    } finally { Object.assign(SETTINGS, avant); }
+  });
+});
+test('[11b] sensibilité de la souris', () => {
+  if (!/SETTINGS/.test(srcDe('updatePlay'))) return PAS_FAITE;
+  const s = SETTINGS.sens;
+  try {
+    startGame(); for (const e of G.enemies) e.state = 'dead';
+    SETTINGS.sens = 2; const a0 = G.P.a; MOUSE.dx = 100; gameUpdate(1 / 60); MOUSE.dx = 0;
+    assert(Math.abs(angNorm(G.P.a - a0) - 0.5) < 1e-6, `100 px de souris avec sens 2 : rotation ${angNorm(G.P.a - a0)} (attendu 0,5)`);
+  } finally { SETTINGS.sens = s; }
+});
+test('[11c] options en pause : ↑ ↓ ← →', () => {
+  if (!/SETTINGS/.test(srcDe('gameUpdate')) || !/Sensibilit/.test(srcDe('gameDraw'))) return PAS_FAITE;
+  const avant = Object.assign({}, SETTINGS);
+  return avecCle('doomed_settings', () => {
+    try {
+      startGame(); G.state = 'pause'; G.optLigne = 0; SETTINGS.sens = 1; SETTINGS.volume = 0.5; SETTINGS.music = true;
+      press('ArrowRight'); assert(SETTINGS.sens === 1.25, 'sensibilité +0,25 attendue (vaut ' + SETTINGS.sens + ')');
+      for (let k = 0; k < 10; k++) press('ArrowRight');
+      assert(SETTINGS.sens === 2, 'sensibilité plafonnée à 2');
+      press('ArrowDown'); press('ArrowLeft'); assert(Math.abs(SETTINGS.volume - 0.4) < 1e-9, 'volume -0,1 attendu (vaut ' + SETTINGS.volume + ')');
+      press('ArrowDown'); press('ArrowRight'); assert(SETTINGS.music === false, 'musique : oui → non attendu');
+      assert(G.state === 'pause', 'les flèches ne doivent pas quitter la pause');
+      const t = textesDessines(() => gameDraw());
+      assert(/Sensibilit/.test(t) && /Volume/.test(t) && /Musique/.test(t), 'les 3 réglages doivent être affichés en pause ; dessiné : ' + t);
+    } finally {
+      Object.assign(SETTINGS, avant); if (typeOf('MUSIQUE') !== 'undefined') MUSIQUE.actif = true; G.state = 'play'; startGame();
+    }
+  });
+});
+test('[11d] volume initial selon les réglages', () => {
+  if (!/SETTINGS/.test(srcDe('audioUnlock'))) return PAS_FAITE;
+  const sauve = [AC, MASTER, NOISE], ctor = window.AudioContext, v = SETTINGS.volume;
+  try {
+    AC = null; SETTINGS.volume = 0.3; window.AudioContext = function () { return audioFactice(); };
+    audioUnlock();
+    assert(MASTER && Math.abs(MASTER.gain.value - 0.3) < 1e-9, 'MASTER.gain.value doit valoir SETTINGS.volume (0,3)');
+  } finally { window.AudioContext = ctor; SETTINGS.volume = v; [AC, MASTER, NOISE] = sauve; }
+});
+test('[12a] progression : lecture et sauvegarde', () => {
+  if (typeOf('lireProgression') !== 'function' || typeOf('sauverProgression') !== 'function') return PAS_FAITE;
+  return avecCle('doomed_progress', () => {
+    localStorage.removeItem('doomed_progress');
+    const p = lireProgression();
+    assert(p.reached === 0 && p.best && typeof p.best === 'object', 'sans sauvegarde : { reached: 0, best: {} } attendu');
+    localStorage.setItem('doomed_progress', 'xx'); assert(lireProgression().reached === 0, 'illisible : valeurs par défaut');
+    assert(sauverProgression({ reached: 2, best: { 0: 61 } }) === true && lireProgression().reached === 2 && lireProgression().best[0] === 61, 'sauvegarde puis relecture');
+  });
+});
+test('[12b] fin de niveau : progression et meilleur temps', () => {
+  if (!/Progression/.test(srcDe('useAction'))) return PAS_FAITE;
+  return avecCle('doomed_progress', () => {
+    localStorage.removeItem('doomed_progress');
+    startGame(); G.time = 50; placerDevantSortie(); press('KeyE');
+    let p = lireProgression();
+    assert(G.state === 'clear' && p.reached === 1 && Math.abs(p.best[0] - 50) < 0.1, 'après E1 en 50 s : ' + JSON.stringify(p));
+    startGame(); G.time = 70; placerDevantSortie(); press('KeyE');
+    p = lireProgression();
+    assert(Math.abs(p.best[0] - 50) < 0.1 && p.reached === 1, 'un temps moins bon ne doit pas remplacer le meilleur : ' + JSON.stringify(p));
+    startGame();
+  });
+});
+test('[12c] écran titre : continuer et meilleurs temps', () => {
+  if (!/Progression/.test(srcDe('drawTitle'))) return PAS_FAITE;
+  return avecCle('doomed_progress', () => {
+    localStorage.removeItem('doomed_progress');
+    assert(!/continuer/i.test(textesDessines(() => drawTitle())), 'sans progression : pas de « continuer »');
+    localStorage.setItem('doomed_progress', JSON.stringify({ reached: 1, best: { 0: 75 } }));
+    horsEcran.length = 0;
+    const t = textesDessines(() => drawTitle());
+    assert(/continuer/i.test(t) && /2/.test(t), '« C : continuer au niveau 2 » attendu ; dessiné : ' + t);
+    assert(/1:15/.test(t), 'le meilleur temps (1:15) doit être affiché');
+    assert(!horsEcran.length, 'texte hors de l\'écran : ' + horsEcran.join(' ; '));
+  });
+});
+test('[12d] touche C : reprendre au dernier niveau atteint', () => {
+  if (!/KeyC/.test(srcDe('gameUpdate'))) return PAS_FAITE;
+  return avecCle('doomed_progress', () => {
+    localStorage.setItem('doomed_progress', JSON.stringify({ reached: 1, best: {} }));
+    G.state = 'title'; press('KeyC');
+    assert(G.state === 'play' && G.level === 1, 'C avec une progression : le niveau 2 (indice 1) doit démarrer');
+    localStorage.setItem('doomed_progress', JSON.stringify({ reached: 0, best: {} }));
+    G.state = 'title'; press('KeyC');
+    assert(G.state === 'title', 'C sans progression : rien ne se passe');
+    startGame();
+  });
+});
+
+/* ---------------- 9. monstres : tous ceux de ENEMY_DEF, y compris ceux créés par le modèle ---------------- */
+group('9. Monstres (tous ceux de ENEMY_DEF, y compris ceux créés par le modèle)');
+test('[monstres] fiches valides', () => {
+  const pb = [], n = (v, a, b) => typeof v === 'number' && v >= a && v <= b;
+  for (const [t, f] of Object.entries(ENEMY_DEF)) {
+    if (!(n(f.hp, 10, 1500) && n(f.speed, 0.3, 4) && n(f.melee, 0, 60) && n(f.r, 0.2, 0.55) && n(f.scale, 0.35, 1.4))) pb.push(t + ' : hp, speed, melee, r ou scale hors bornes');
+    if (!(f.melee > 0 || f.ranged || f.hitscan || f.charge)) pb.push(t + ' : aucune attaque');
+    for (const k of ['ranged', 'hitscan', 'charge'])
+      if (f[k] && !(f[k].min < f[k].max && Array.isArray(f[k].cool) && f[k].cool[0] <= f[k].cool[1])) pb.push(`${t}.${k} incohérent`);
+    if (f.ranged && !['fire', 'blue', 'green'].includes(f.ranged.color)) pb.push(t + ' : couleur de boule de feu inconnue');
+  }
+  assert(!pb.length, pb.join(' ; '));
+});
+test('[monstres] 5 poses visibles et différentes pour chaque monstre', () => {
+  const pb = [];
+  for (const t of Object.keys(ENEMY_DEF)) {
+    const emp = new Set();
+    for (const p of ['A', 'B', 'Atk', 'Pain', 'Corpse']) {
+      const x = TX[t + p];
+      if (!x || !(x.px instanceof Uint32Array)) { pb.push(`TX.${t}${p} absent (dessin manquant ou non enregistré)`); continue; }
+      let n = 0, s = 0;
+      for (let i = 0; i < x.px.length; i++) if (x.px[i]) { n++; s = (s * 31 + i + x.px[i]) % 1000000007; }
+      if (n < 80) pb.push(`TX.${t}${p} presque vide (${n} pixels visibles)`);
+      emp.add(n + ':' + s);
+    }
+    if (emp.size < 5) pb.push(`${t} : les 5 poses ne sont pas toutes différentes`);
+  }
+  assert(!pb.length, pb.slice(0, 6).join(' ; '));
+});
+test('[monstres] un caractère de carte par monstre', () => {
+  const pb = [];
+  for (const t of Object.keys(ENEMY_DEF)) {
+    const cars = Object.keys(SPAWN).filter(c => SPAWN[c] === t);
+    if (cars.length !== 1) pb.push(`${t} : ${cars.length} caractère(s) dans SPAWN`);
+    else if (LEGEND[cars[0]] !== 0) pb.push(`${t} : LEGEND['${cars[0]}'] doit valoir 0`);
+  }
+  assert(!pb.length, pb.join(' ; '));
+});
+test('[monstres] chaque monstre blesse le joueur en moins de 20 s', () => {
+  const pb = [];
+  for (const t of Object.keys(ENEMY_DEF)) {
+    startGame(); G.P.x = 11.5; G.P.y = 6.5; G.P.hp = 1e6; G.P.armor = 0;   // hangar de E1, monstre à 4 cases
+    const e = mkEnemy(t, 11.5, 2.5); wake(e); G.enemies = [e];
+    let k = 0;
+    for (; k < 20 * 60 && G.P.hp >= 1e6; k++) { gameUpdate(1 / 60); PRESSED.clear(); }
+    if (G.P.hp >= 1e6) pb.push(t);
+  }
+  startGame();
+  assert(!pb.length, 'monstre(s) qui ne blesse(nt) pas le joueur en 20 s : ' + pb.join(', '));
+});
+
+/* ---------------- 10. tests d'acceptation : sons des monstres, objets classiques ---------------- */
+group('10. Tests d\'acceptation : sons des monstres, objets classiques');
+function sonsJoues(fn) {   // fréquences de départ des tone() joués pendant fn
+  const t = window.tone, n = window.noise, f0 = [];
+  window.tone = function (a) { f0.push(Math.round(a)); };
+  window.noise = function () {};
+  try { fn(); } finally { window.tone = t; window.noise = n; }
+  return f0;
+}
+test('[15a] voixMonstre : voix déduite de la fiche', () => {
+  if (typeOf('voixMonstre') !== 'function') return PAS_FAITE;
+  const b = voixMonstre('baron'), c = voixMonstre('caco'), s = voixMonstre('soldier');
+  for (const [n, v] of [['baron', b], ['caco', c], ['soldier', s]])
+    assert(v && v.f >= 45 && v.f <= 700 && v.duree >= 0.25 && v.duree <= 1 && typeof v.onde === 'string', `voixMonstre('${n}') hors bornes : ` + JSON.stringify(v));
+  assert(b.f < s.f, 'le baron (gros, robuste) doit avoir une voix plus grave que le soldat');
+  assert(c.onde === 'triangle' && s.onde === 'sawtooth', 'onde : triangle pour un monstre volant, dents de scie pour un tireur');
+  assert(b.f === Math.max(45, Math.min(700, Math.round(700 - 1.1 * 350 - 600 / 4))), 'formule de f non respectée pour le baron');
+});
+test('[15b] cris, douleur et mort selon la voix du monstre', () => {
+  if (!/voixMonstre/.test(String(sfx.sight)) || !/voixMonstre/.test(String(sfx.edeath)) || !/voixMonstre/.test(String(sfx.epain))) return PAS_FAITE;
+  const vb = voixMonstre('baron'), vc = voixMonstre('caco');
+  assert(sonsJoues(() => sfx.sight('baron', 1))[0] === vb.f && sonsJoues(() => sfx.sight('caco', 1))[0] === vc.f, 'sight : premier son à vo.f');
+  assert(sonsJoues(() => sfx.sight('imp', 1))[0] === 300, 'le diablotin garde son cri (300 Hz)');
+  assert(Math.abs(sonsJoues(() => sfx.edeath('caco', 1))[0] - Math.round(vc.f * 1.2)) <= 1, 'edeath : premier son à vo.f × 1,2');
+  assert(Math.abs(sonsJoues(() => sfx.epain(1, 'baron'))[0] - Math.round(vb.f * 1.3)) <= 1, 'epain(v, type) : premier son à vo.f × 1,3');
+  assert(sonsJoues(() => sfx.epain(1))[0] === 250, 'epain sans type : son actuel (250 Hz)');
+  for (const s of SONS.split(' ')) assert(typeof sfx[s] === 'function', 'son disparu : sfx.' + s);
+});
+test('[15c] la douleur d\'un monstre utilise sa voix', () => {
+  if (!/epain\([^)]*e\.type/.test(srcDe('damageEnemy'))) return PAS_FAITE;
+  const p = sfx.epain, r = Math.random; let args = null;
+  sfx.epain = function () { args = [...arguments]; };
+  Math.random = () => 0.1;
+  try { startGame(); const e = mkEnemy('caco', 4.5, 2.5); G.enemies = [e]; damageEnemy(e, 5); }
+  finally { sfx.epain = p; Math.random = r; }
+  assert(args && args[1] === 'caco', 'damageEnemy doit appeler sfx.epain(v, e.type) ; appel : ' + JSON.stringify(args));
+});
+test('[16a] objets K I M G dans les cartes', () => {
+  if (ITEM['K'] !== 'berserk') return PAS_FAITE;
+  for (const [c, t] of [['K', 'berserk'], ['I', 'invis'], ['M', 'mega'], ['G', 'backpack']]) assert(LEGEND[c] === 0 && ITEM[c] === t, `'${c}' : LEGEND 0 et ITEM '${t}' attendus`);
+});
+test('[16b-tex] buildPowerups : textures visibles (vérifié dès l\'écriture de la fonction)', () => {
+  if (typeOf('buildPowerups') !== 'function') return PAS_FAITE;
+  buildPowerups();
+  texturesVisibles(['berserk', 'invis', 'mega', 'backpack'], 0.08);
+});
+test('[16b] textures des objets enregistrées', () => {
+  if (!TX.berserk) return PAS_FAITE;
+  for (const n of ['berserk', 'invis', 'mega', 'backpack']) assert(TX[n] && ASSET_LIST.includes(n), `TX.${n} absent ou pas dans ASSET_LIST`);
+});
+test('[16c] ITEM_TEX et ITEM_SCALE des objets', () => {
+  if (!ITEM_TEX.berserk) return PAS_FAITE;
+  for (const n of ['berserk', 'invis', 'mega', 'backpack']) assert(ITEM_TEX[n] && ITEM_TEX[n]() === TX[n] && ITEM_SCALE[n] > 0, `ITEM_TEX / ITEM_SCALE de ${n}`);
+});
+test('[16d] ramassage des objets classiques', () => {
+  if (!/berserk/.test(srcDe('updatePickups'))) return PAS_FAITE;
+  startGame(); const P = G.P;
+  const prendre = type => { const it = { type, x: P.x, y: P.y, taken: false }; G.items = [it]; updatePickups(); return it.taken; };
+  P.hp = 40; assert(prendre('berserk') && P.berserk === true && P.hp === 100, 'berserk : P.berserk et PV remontés à 100');
+  assert(prendre('invis') && P.invisT === 30, 'invisibilité : P.invisT = 30');
+  assert(prendre('mega') && P.hp === 200 && P.armor === 200, 'mégasphère : 200 PV et 200 armure');
+  P.shells = 98; assert(prendre('backpack') && P.backpack === true && P.shells === 100, 'sac à dos : plafond des cartouches doublé (100)');
+  P.shells = 99; assert(prendre('ammo') && P.shells === 100, 'avec le sac à dos, les cartouches montent jusqu\'à 100');
+});
+test('[16e] berserk et invisibilité s\'arrêtent au niveau suivant', () => {
+  if (!/berserk/.test(srcDe('startLevel'))) return PAS_FAITE;
+  startGame(); G.P.berserk = true; G.P.invisT = 12; startLevel(1);
+  assert(G.P.berserk === false && G.P.invisT === 0, 'nouveau niveau : berserk false et invisT 0');
+  startGame();
+});
+test('[16f] berserk : coup de poing ×10', () => {
+  if (!/berserk/.test(srcDe('fire'))) return PAS_FAITE;
+  startGame(); const P = G.P, r = Math.random, hs = window.hitscan; Math.random = () => 0.5;
+  try {
+    const e = mkEnemy('baron', P.x + 1, P.y); e.state = 'chase'; window.hitscan = () => e; P.weapon = 2;
+    e.hp = 1000; P.berserk = false; fire(); const sans = 1000 - e.hp;
+    e.hp = 1000; P.berserk = true; P.cool = 0; fire(); const avec = 1000 - e.hp;
+    assert(sans > 0 && avec === sans * 10, `poing : ${sans} dégâts sans berserk, ${avec} avec (attendu ×10)`);
+  } finally { Math.random = r; window.hitscan = hs; startGame(); }
+});
+test('[16g] invisibilité : les ennemis visent mal', () => {
+  if (!/invisT/.test(srcDe('enemyShoot')) || !/invisT/.test(srcDe('spawnFireball'))) return PAS_FAITE;
+  startGame(); const P = G.P, r = Math.random, lc = window.losClear;
+  try {
+    window.losClear = () => true;
+    const s = mkEnemy('soldier', P.x + 3, P.y);
+    Math.random = () => 0.3; P.hp = 100; P.armor = 0; P.invisT = 0; enemyShoot(s);
+    assert(P.hp < 100, 'sans invisibilité, ce tir doit toucher');
+    P.hp = 100; P.invisT = 10; enemyShoot(s);
+    assert(P.hp === 100, 'avec invisibilité, ce tir doit rater (+40 % de ratés)');
+    Math.random = () => 0.99; G.shots = []; spawnFireball(mkEnemy('imp', P.x + 3, P.y));
+    const b = G.shots[0], a = Math.atan2(b.vy, b.vx);
+    assert(Math.abs(angNorm(a - Math.PI)) > 0.2, 'avec invisibilité, la boule de feu doit partir de travers');
+  } finally { Math.random = r; window.losClear = lc; P.invisT = 0; G.shots = []; startGame(); }
+});
+test('[16h] l\'invisibilité s\'épuise', () => {
+  if (!/invisT/.test(srcDe('updatePlay'))) return PAS_FAITE;
+  startGame(); for (const e of G.enemies) e.state = 'dead'; G.P.invisT = 1;
+  step(1.5);
+  assert(G.P.invisT === 0, 'après 1,5 s, invisT doit valoir 0 (vaut ' + G.P.invisT + ')');
+});
+
+test('[orientation] textures à l\'endroit : murs, portes, objets, ennemis, sous les 4 directions', () => {
+  // texture test : vert à gauche, magenta à droite ; à l'écran, le vert doit toujours être à gauche
+  const asym = texFromCanvas(makeCanvas(64, 64, x => { x.fillStyle = '#00ff00'; x.fillRect(0, 0, 32, 64); x.fillStyle = '#ff00ff'; x.fillRect(32, 0, 32, 64); }), true);
+  const sens = () => {
+    const d = ctx.getImageData(0, 0, W, H).data; let gv = 0, nv = 0, gm = 0, nm = 0;
+    for (let y = 40; y < H - 60; y++) for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4, r = d[i], g = d[i + 1], b = d[i + 2];
+      if (g > 40 && g > 2 * r && g > 2 * b) { gv += x; nv++; } else if (r > 40 && b > 40 && r > 2 * g && b > 2 * g) { gm += x; nm++; }
+    }
+    return nv > 30 && nm > 30 ? (gv / nv < gm / nm ? 'ok' : 'en miroir') : 'invisible';
+  };
+  const salle = ['###E###', '#.....#', '#.....#', '#..P..#', '#.....#', '#.....#', '#######'], fautes = [];
+  const cas = [
+    ['mur', ['###E###', '#.....#', '#.....#', 'E..P..E', '#.....#', '#.....#', '###E###'], () => WALL_TEX[4], v => { WALL_TEX[4] = v; }, () => {}],
+    ['porte', ['#########', '####E####', '####.####', '####=####', '#E.=P=.E#', '####=####', '####.####', '####E####', '#########'], () => TX.door, v => { TX.door = v; }, () => {}],
+    ['objet', salle, () => TX.medkit, v => { TX.medkit = v; }, a => { G.items = [{ type: 'medkit', x: G.P.x + Math.cos(a) * 1.5, y: G.P.y + Math.sin(a) * 1.5, taken: false }]; }],
+    ['ennemi', salle, () => TX.impA, v => { TX.impA = v; }, a => { const e = mkEnemy('imp', G.P.x + Math.cos(a) * 2, G.P.y + Math.sin(a) * 2); e.state = 'idle'; G.enemies = [e]; }],
+  ];
+  for (const [nom, rows, lire, poser, prep] of cas) {
+    const avant = lire(); poser(asym);
+    try {
+      for (const [d, a] of [['est', 0], ['sud', Math.PI / 2], ['ouest', Math.PI], ['nord', -Math.PI / 2]]) {
+        MAPS.push({ name: 'T', rows }); try { startGame(); startLevel(MAPS.length - 1); } finally { MAPS.pop(); }
+        for (const e of G.enemies) e.state = 'dead';
+        G.P.a = a; G.items = []; G.msg = ''; G.msgT = 0; prep(a);
+        const arme = TX.wpPistol; TX.wpPistol = makeCanvas(1, 1);   // l'arme en main masquerait l'objet posé au centre
+        try { gameDraw(); } finally { TX.wpPistol = arme; }
+        const s = sens(); if (s !== 'ok') fautes.push(`${nom} vu vers l'${d} : ${s}`);
+      }
+    } finally { poser(avant); }
+  }
+  startGame();
+  assert(!fautes.length, 'textures mal orientées : ' + fautes.join(' ; '));
+});
+
+test('[difficulte] l\'écran titre affiche la difficulté réellement choisie', () => {
+  const t = window.text, vus = [];
+  window.text = function (s) { vus.push(String(s)); return t.apply(this, arguments); };
+  try {
+    for (const [k, nom] of [[0, 'Facile'], [1, 'Normal'], [2, 'Difficile']]) {
+      G.skill = k; vus.length = 0; drawTitle();
+      assert(vus.some(s => s.startsWith('Difficulté : < ' + nom)), `G.skill = ${k} : « Difficulté : < ${nom} » attendu à l'écran titre`);
+    }
+  } finally { window.text = t; G.skill = 1; }
+});
+
+test('[test-niveau] lancement direct d\'un niveau : options de l\'adresse, invincibilité', () => {
+  const o = optionsTest('?niveau=3&difficulte=2&invincible=1&armes=1');
+  assert(o && o.niveau === 3 && o.difficulte === 2 && o.invincible === true && o.armes === true, 'options mal lues : ' + JSON.stringify(o));
+  assert(optionsTest('') === null && optionsTest('?niveau=0') === null, 'sans niveau valide, optionsTest doit renvoyer null');
+  assert(optionsTest('?niveau=2&difficulte=9').difficulte === 1, 'difficulté hors bornes : Normal attendu');
+  startGame(); G.triche = { invincible: true }; const hp = G.P.hp;
+  try { hurtPlayer(40, { x: G.P.x, y: G.P.y }); } finally { G.triche = null; }
+  assert(G.P.hp === hp, 'invincible : les dégâts doivent être ignorés');
+  hurtPlayer(10, { x: G.P.x, y: G.P.y }); assert(G.P.hp < hp, 'sans triche, les dégâts comptent');
+  startGame();
+});
+
+test('[lave-contact] traverser la lave en vitesse brûle quand même', () => {
+  avecCarte(CARTE_LAVE, i => {
+    startLevel(i); const P = G.P; for (const e of G.enemies) e.state = 'dead';
+    P.x = 3.5; P.y = 2.5; P.hp = 100; P.armor = 0; P.lavaT = 0;
+    step(0.1);                                   // un dixième de seconde sur la lave
+    assert(P.hp === 95, `contact bref avec la lave : PV ${P.hp} (attendu 95)`);
+    P.x = 1.5; P.y = 1.5; step(0.1); P.x = 3.5; P.y = 2.5; step(0.1);   // ressortir et revenir aussitôt
+    assert(P.hp === 95, `retour sur la lave avant 0,5 s : PV ${P.hp} (attendu 95, pas de brûlure en rafale)`);
+  });
+});
+
+test('[souris] la souris reste capturée en fin de niveau et à la mort (libérée seulement en pause)', () => {
+  for (const s of ['play', 'title', 'clear', 'dead', 'victory']) { G.state = s; assert(wantsPointerLock(), `état « ${s} » : la souris doit rester capturée`); }
+  const ex = document.exitPointerLock, verrou = MOUSE.locked; let liberee = false;
+  document.exitPointerLock = () => { liberee = true; };
+  try {
+    MOUSE.locked = true; startGame(); for (const e of G.enemies) e.state = 'dead';
+    G.P.hp = 1; G.P.armor = 0; hurtPlayer(50, { x: G.P.x, y: G.P.y }); step(0.1);
+    assert(G.state === 'dead' && !liberee, 'à la mort, la souris ne doit pas être libérée');
+  } finally { document.exitPointerLock = ex; MOUSE.locked = verrou; startGame(); }
+});
+
+test('[inventaire] continuer et mourir gardent les armes et munitions gagnées', () => {
+  return avecCle('doomed_progress', () => {
+    localStorage.removeItem('doomed_progress');
+    startGame(); const P = G.P;
+    Object.assign(P, { owned: [true, true, true, true, false], hasShotgun: true, shells: 33, bullets: 120, rockets: 0, armor: 40 });
+    placerDevantSortie(); press('KeyE');
+    assert(G.state === 'clear', 'fin de niveau attendue');
+    G.state = 'title'; press('KeyC');
+    assert(G.state === 'play' && G.level === 1, 'C : le niveau 2 doit démarrer');
+    assert(G.P.owned[3] && G.P.hasShotgun && G.P.shells === 33 && G.P.bullets === 120 && G.P.armor === 40,
+           'C : inventaire du niveau précédent attendu, obtenu ' + JSON.stringify(inventaire(G.P)));
+    G.P.shells = 2; G.P.owned[4] = true; G.P.hp = 0; restartLevel();
+    assert(G.P.shells === 33 && !G.P.owned[4] && G.P.hp === 100, 'après une mort : inventaire du début du niveau, 100 PV');
+    startGame();
+  });
+});
+
+
+/* ---------------- 11. images dessinées par ComfyUI (js/01b_images_ia.js) ---------------- */
+group('11. Images ComfyUI (js/01b_images_ia.js) et repli sur le dessin procédural');
+const POSES_IA = ['A', 'B', 'Atk', 'Pain', 'Corpse'];
+test('[ia] chaque entrée de IMAGES_IA est lisible (taille, palette, indices)', () => {
+  const pb = [];
+  for (const [k, e] of Object.entries(IMAGES_IA)) {
+    if (!(e && Number.isInteger(e.w) && Number.isInteger(e.h) && e.w > 0 && e.h > 0)) { pb.push(k + ' : w/h invalides'); continue; }
+    if (typeof e.pal !== 'string' || !/^([0-9a-f]{6})+$/.test(e.pal)) { pb.push(k + ' : palette invalide'); continue; }
+    let d; try { d = atob(e.d); } catch (err) { pb.push(k + ' : base64 illisible'); continue; }
+    if (d.length !== e.w * e.h) { pb.push(`${k} : ${d.length} pixels au lieu de ${e.w * e.h}`); continue; }
+    const nc = e.pal.length / 6;
+    for (let i = 0; i < d.length; i++) if (d.charCodeAt(i) >= nc) { pb.push(k + ' : indice hors palette'); break; }
+    if (!ASSET_LIST.includes(k)) pb.push(k + ' : nom inconnu de ASSET_LIST');
+    if (!imageIA(k)) pb.push(k + ' : imageIA() renvoie null');
+  }
+  assert(!pb.length, pb.slice(0, 6).join(' ; '));
+});
+test('[ia] imageIA : même format que texFromCanvas, null si absente ou abîmée', () => {
+  assert(imageIA('nexistepas') === null, 'image absente : null attendu');
+  IMAGES_IA.__t = { w: 2, h: 2, tr: 1, pal: '000000ff0000', d: btoa('\x00\x01\x01\x00') };
+  IMAGES_IA.__abime = { w: 2, h: 2, tr: 0, pal: 'ff0000', d: btoa('\x00\x05\x00\x00') };
+  IMAGES_IA.__court = { w: 4, h: 4, tr: 0, pal: 'ff0000', d: btoa('\x00') };
+  try {
+    const t = imageIA('__t');
+    assert(t && t.w === 2 && t.h === 2 && t.px instanceof Uint32Array && t.px.length === 4 && t.cv && t.cv.getContext, 'format {w, h, px, cv} attendu');
+    assert(t.px[0] === 0 && t.px[3] === 0 && t.px[1] === rgb(255, 0, 0), 'indice 0 transparent (tr = 1), indice 1 = rouge');
+    const d = t.cv.getContext('2d').getImageData(0, 0, 2, 2).data;
+    assert(d[3] === 0 && d[4] === 255 && d[7] === 255, 'le canvas cv doit refléter les pixels');
+    assert(imageIA('__abime') === null && imageIA('__court') === null, 'indice hors palette ou pixels manquants : null');
+  } finally { delete IMAGES_IA.__t; delete IMAGES_IA.__abime; delete IMAGES_IA.__court; }
+});
+test('[ia] monstres : 5 images ComfyUI complètes, utilisées par le jeu', () => {
+  const pb = [], types = new Set(Object.keys(IMAGES_IA).filter(k => /A$/.test(k) && ENEMY_DEF[k.slice(0, -1)]).map(k => k.slice(0, -1)));
+  for (const t of types) {
+    for (const p of POSES_IA) {
+      const e = IMAGES_IA[t + p];
+      if (!e) { pb.push(`${t}${p} manquant (il faut les 5 poses)`); continue; }
+      if (e.w !== 64 || e.h !== 64 || !e.tr) pb.push(`${t}${p} : sprite 64×64 avec transparence attendu`);
+      const x = TX[t + p], r = imageIA(t + p);
+      if (!x || !r || x.px.length !== r.px.length || x.px.some((v, i) => v !== r.px[i])) pb.push(`TX.${t}${p} n'utilise pas l'image ComfyUI`);
+    }
+  }
+  assert(!pb.length, pb.slice(0, 6).join(' ; '));
+  if (!types.size) return 'aucun monstre dessiné par ComfyUI pour l\'instant';
+});
+test('[ia] repli : poses incomplètes -> dessin procédural', () => {
+  const dessin = p => makeCanvas(64, 64, x => { x.fillStyle = '#123456'; x.fillRect(0, 0, 10 + p.length, 64); });
+  IMAGES_IA.zzessaiA = { w: 64, h: 64, tr: 1, pal: '000000ff00ff', d: btoa('\x01'.repeat(4096)) };
+  try {
+    enregistrerPoses('zzessai', dessin);
+    assert(TX.zzessaiA && TX.zzessaiA.px[0] === rgb(0x12, 0x34, 0x56), 'une seule pose ComfyUI sur 5 : toutes les poses doivent venir du dessin');
+    for (const p of POSES_IA.slice(1)) IMAGES_IA['zzessai' + p] = IMAGES_IA.zzessaiA;
+    enregistrerPoses('zzessai', dessin);
+    assert(TX.zzessaiCorpse.px[63] === rgb(255, 0, 255), '5 poses ComfyUI : elles doivent remplacer le dessin');
+  } finally { for (const p of POSES_IA) { delete IMAGES_IA['zzessai' + p]; delete TX['zzessai' + p]; } }
+});
+test('[ia] murs, sol, plafond : image ComfyUI si présente, mot EXIT écrit par le jeu', () => {
+  const pb = [];
+  for (const n of ['brick', 'tech', 'door', 'floor', 'ceil']) {
+    const e = entreeImage(n);   // Freedoom d'abord, puis ComfyUI
+    if (!e) continue;
+    const r = imageIA(n);
+    if (!(r.w === 64 && r.h === 64 && !e.tr)) pb.push(n + ' : texture 64×64 opaque attendue');
+    else if (TX[n].px.some((v, i) => v !== r.px[i])) pb.push(`TX.${n} n'utilise pas son image (Freedoom ou ComfyUI)`);
+  }
+  if (IMAGES_IA.exit && !(typeof IMAGES_FREEDOOM !== 'undefined' && IMAGES_FREEDOOM.exit)) {   // le fond ComfyUI reçoit le mot EXIT
+    const r = imageIA('exit');
+    let diff = 0, vert = 0;
+    for (let i = 0; i < 64 * 20; i++) {
+      if (TX.exit.px[i] !== r.px[i]) diff++;
+      const c = TX.exit.px[i], R = c & 255, Gv = (c >> 8) & 255, B = (c >> 16) & 255;
+      if (Gv > 180 && R < 160 && B < 180) vert++;
+    }
+    if (diff < 100 || vert < 20) pb.push(`exit : le mot EXIT doit être écrit par le jeu sur le fond ComfyUI (${diff} px changés, ${vert} px verts)`);
+  }
+  assert(WALL_TEX[1] === TX.brick && WALL_TEX[4] === TX.exit, 'WALL_TEX doit suivre les textures remplacées');
+  assert(!pb.length, pb.join(' ; '));
+  if (!['brick', 'tech', 'door', 'exit', 'floor', 'ceil'].some(n => IMAGES_IA[n])) return 'aucune texture dessinée par ComfyUI pour l\'instant';
+});
+test('[ia] objets au sol : image ComfyUI si présente, à la taille exacte du dessin procédural', () => {
+  const pb = [];
+  for (const n of OBJETS_IA) {
+    if (!ASSET_LIST.includes(n)) pb.push(n + ' : absent de ASSET_LIST');
+    const e = IMAGES_IA[n];
+    if (!e) continue;
+    const [w, h] = n === 'shotgun' ? [64, 24] : [32, 32];
+    if (e.w !== w || e.h !== h || !e.tr) { pb.push(`${n} : sprite ${w}×${h} avec transparence attendu (${e.w}×${e.h})`); continue; }
+    const r = imageIA(n), x = TX[n];
+    if (!x || x.w !== w || x.h !== h || x.px.some((v, i) => v !== r.px[i])) pb.push(`TX.${n} n'utilise pas l'image ComfyUI`);
+  }
+  assert(!pb.length, pb.slice(0, 6).join(' ; '));
+  if (!OBJETS_IA.some(n => IMAGES_IA[n])) return 'aucun objet dessiné par ComfyUI pour l\'instant';
+});
+test('[ia] objets : image de mauvaise taille ou sans transparence ignorée (le dessin reste)', () => {
+  const avant0 = TX.medkit, orig = IMAGES_IA.medkit, fd = typeof IMAGES_FREEDOOM !== 'undefined' && IMAGES_FREEDOOM.medkit;
+  if (fd) delete IMAGES_FREEDOOM.medkit;   // repli ComfyUI testé sans l'image Freedoom (prioritaire)
+  TX.medkit = texFromCanvas(makeCanvas(32, 32, x => { x.fillStyle = '#0f0'; x.fillRect(4, 4, 24, 24); }), true);
+  const avant = TX.medkit;
+  try {
+    IMAGES_IA.medkit = { w: 16, h: 16, tr: 1, pal: '000000ff00ff', d: btoa('\x01'.repeat(256)) };
+    appliquerObjetsIA();
+    assert(TX.medkit === avant, 'image 16×16 pour un objet 32×32 : le dessin doit rester');
+    IMAGES_IA.medkit = { w: 32, h: 32, tr: 0, pal: 'ff00ff', d: btoa('\x00'.repeat(1024)) };
+    appliquerObjetsIA();
+    assert(TX.medkit === avant, 'image opaque (tr = 0) : le dessin doit rester');
+    IMAGES_IA.medkit = { w: 32, h: 32, tr: 1, pal: '000000ff00ff', d: btoa('\x00\x01'.repeat(512)) };
+    appliquerObjetsIA();
+    assert(TX.medkit !== avant && TX.medkit.w === 32 && TX.medkit.px[0] === 0 && TX.medkit.px[1] === rgb(255, 0, 255),
+      'image 32×32 transparente : elle doit remplacer le dessin');
+  } finally {
+    if (orig) IMAGES_IA.medkit = orig; else delete IMAGES_IA.medkit;
+    if (fd) IMAGES_FREEDOOM.medkit = fd;
+    TX.medkit = avant0;
+  }
+});
+test('[ia] les 6 monstres d\'origine prennent leurs 5 images ComfyUI (buildObjects)', () => {
+  const types = ['imp', 'pinky', 'caco', 'soldier', 'lostsoul', 'baron'], orig = {};
+  const faux = { w: 64, h: 64, tr: 1, pal: '000000ff00ff', d: btoa('\x01'.repeat(4096)) };
+  const fd = {};   // repli ComfyUI testé sans les images Freedoom (prioritaires)
+  for (const t of types) for (const p of POSES_IA) {
+    orig[t + p] = IMAGES_IA[t + p]; IMAGES_IA[t + p] = faux;
+    if (typeof IMAGES_FREEDOOM !== 'undefined' && IMAGES_FREEDOOM[t + p]) { fd[t + p] = IMAGES_FREEDOOM[t + p]; delete IMAGES_FREEDOOM[t + p]; }
+  }
+  try {
+    buildObjects();
+    const pb = types.filter(t => POSES_IA.some(p => !TX[t + p] || TX[t + p].px[0] !== rgb(255, 0, 255)));
+    assert(!pb.length, 'images ComfyUI ignorées pour : ' + pb.join(', '));
+  } finally {
+    for (const [k, v] of Object.entries(orig)) { if (v) IMAGES_IA[k] = v; else delete IMAGES_IA[k]; }
+    Object.assign(typeof IMAGES_FREEDOOM !== 'undefined' ? IMAGES_FREEDOOM : {}, fd);
+    buildObjects();
+  }
+});
+
+/* ---------------- monstres : réveil par le bruit, portes à clé, angles de murs ---------------- */
+test('[mo] le bruit d\'un tir ne réveille pas à travers un mur ni une porte fermée', () => {
+  avecCarte(['##########', '#P...#...#', '#....#1..#', '#....=...#', '#..1.#...#', '####E#####'], i => {
+    startLevel(i);
+    const salle = G.enemies.find(e => Math.floor(e.x) === 3), derriere = G.enemies.find(e => Math.floor(e.x) === 6);
+    const D = G.L.doors[0];
+    wakeNear(G.P.x, G.P.y, 8);
+    assert(salle.state === 'chase', 'le diablotin de la même salle doit se réveiller');
+    assert(derriere.state === 'idle', 'diablotin réveillé à travers le mur et la porte fermée (5 cases à vol d\'oiseau)');
+    D.open = 1; D.state = 'open';
+    wakeNear(G.P.x, G.P.y, 8);
+    assert(derriere.state === 'chase', 'porte ouverte, 8 cases de marche : le diablotin doit se réveiller');
+  });
+});
+test('[mo] les ennemis ne cherchent pas à passer par une porte à clé verrouillée', () => {
+  avecCarte(CARTE_CLE, i => {
+    startLevel(i); computeFlow();
+    const L = G.L, apres = 1 * L.w + 5;   // case juste après la porte rouge (4, 1)
+    assert(G.flow[apres] === -1, 'porte rouge verrouillée comptée comme passage (distance ' + G.flow[apres] + ')');
+    G.P.keys.red = true; computeFlow();
+    assert(G.flow[apres] === 4, 'avec la clé rouge, la porte doit redevenir un passage (distance ' + G.flow[apres] + ')');
+  });
+});
+test('[mo] passageLibre : le corps bute au ras d\'un coin que la ligne de vue frôle', () => {
+  avecCarte(['#####', '#P..#', '#.#.#', '#...#', '##E##'], i => {
+    startLevel(i);
+    assert(losClear(1.5, 1.9, 3.5, 1.9), 'la ligne de vue (centre) doit passer');
+    assert(!passageLibre(1.5, 1.9, 3.5, 1.9, 0.3), 'un corps de rayon 0,3 touche le pilier (2, 2)');
+    assert(passageLibre(1.5, 1.5, 3.5, 1.5, 0.3), 'au milieu du couloir, le corps passe');
+  });
+});
+test('[mo] chaque monstre traverse un couloir en serpentin (angles, intersections) sans se bloquer', () => {
+  const r = Math.random;
+  try {
+    avecCarte(['#########', '#P......#', '#######.#', '#.......#', '#.#######', '#.....#.#', '#####.#.#', '#.....#.#', '#.###...#', '#.......#', '####E####'], i => {
+      const lents = [];
+      for (const t of Object.keys(ENEMY_DEF)) {
+        let s = 12345; Math.random = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648);
+        startLevel(i); G.P.hp = 1e6;
+        const e = mkEnemy(t, 7.5, 5.5); e.state = 'chase'; G.enemies = [e];   // au fond du cul-de-sac de droite
+        let tps = null;
+        for (let f = 0; f < 60 * 30 && tps === null; f++) { G.P.hp = 1e6; gameUpdate(1 / 60); if (Math.hypot(e.x - G.P.x, e.y - G.P.y) < 3.2) tps = f / 60; }
+        // ~13 cases de chemin avant d'arriver à 3 cases du joueur (caco, 1,1 case/s : ~12 s) ;
+        // un monstre qui bute dans les angles dépasse 1,5 × la durée du trajet (avant correction : caco 15 à 30 s)
+        const ideal = 13 / e.def.speed;
+        if (tps === null || tps > 1.5 * ideal) lents.push(`${t} : ${tps === null ? 'jamais arrivé' : tps.toFixed(1) + ' s'} (trajet ~${ideal.toFixed(0)} s)`);
+        for (const [x, y] of [[e.x - e.def.r, e.y - e.def.r], [e.x + e.def.r, e.y + e.def.r]]) assert(!solidAt(x, y), t + ' dans un mur');
+      }
+      assert(!lents.length, 'monstre(s) ralenti(s) ou bloqué(s) dans les angles : ' + lents.join(' ; '));
+    });
+  } finally { Math.random = r; }
+});
+
+test('[mo] deux monstres côte à côte (ou un groupe) passent une porte trop étroite pour deux', () => {
+  const r = Math.random, bloques = [];
+  const groupes = [[['pinky', 4.5], ['pinky', 6.5]], [['baron', 4.5], ['baron', 6.5]], [['baron', 2.5], ['baron', 4.5], ['pinky', 6.5], ['caco', 8.5]]];
+  try {
+    for (const passage of ['=', '.']) {
+      avecCarte(['###########', '#.........#', '#.........#', '#.........#', '#####' + passage + '#####', '#.........#', '#.........#', '#....P....#', '####E######'], i => {
+        for (const gr of groupes) {
+          let s = 7919; Math.random = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648);
+          startLevel(i);
+          G.enemies = gr.map(([t, x]) => { const e = mkEnemy(t, x, 2.5); e.state = 'chase'; return e; });   // symétriques devant le passage
+          let ok = false;
+          for (let f = 0; f < 60 * 15 && !ok; f++) { G.P.hp = 1e6; gameUpdate(1 / 60); ok = G.enemies.every(e => e.y > 5); }
+          if (!ok) bloques.push((passage === '=' ? 'porte' : 'passage') + ' : ' + gr.map(g => g[0]).join(' + '));
+        }
+      });
+    }
+  } finally { Math.random = r; }
+  assert(!bloques.length, 'groupe(s) bloqué(s) en 15 s, à se repousser devant le passage : ' + bloques.join(' ; '));
+});
+
+test('[freedoom] images Freedoom lisibles, prioritaires et utilisées par le jeu', () => {
+  if (typeof IMAGES_FREEDOOM === 'undefined') return PAS_FAITE;
+  const pb = [];
+  for (const [k, e] of Object.entries(IMAGES_FREEDOOM)) {
+    const r = imageIA(k);
+    if (!r) { pb.push(k + ' : illisible'); continue; }
+    if (k.startsWith('wp')) { if (TX[k] !== r.cv && !(TX[k] && TX[k].width === r.w && TX[k].height === r.h)) pb.push(`TX.${k} : arme en main non remplacée`); continue; }
+    if (!TX[k]) { pb.push(k + ' : nom inconnu du jeu (TX)'); continue; }
+    if (TX[k].w !== r.w || TX[k].h !== r.h) { pb.push(`${k} : ${r.w}×${r.h} au lieu de ${TX[k].w}×${TX[k].h}`); continue; }
+    if (TX[k].px.some((v, i) => v !== r.px[i])) pb.push(`TX.${k} n'utilise pas l'image Freedoom`);
+  }
+  for (const t of ['imp', 'pinky', 'caco', 'soldier', 'lostsoul', 'baron']) for (const p of POSES_IA) if (!IMAGES_FREEDOOM[t + p]) pb.push(`${t}${p} : image Freedoom manquante`);
+  assert(WALL_TEX[1] === TX.brick && WALL_TEX[4] === TX.exit, 'WALL_TEX doit suivre les textures Freedoom');
+  assert(!pb.length, pb.slice(0, 6).join(' ; '));
+  buildObjects();   // un dessin refait en cours de route garde l'image Freedoom
+  assert(TX.impA.px.every((v, i) => v === imageIA('impA').px[i]), 'après buildObjects, TX.impA doit rester l\'image Freedoom');
+});
+
+test('[ciel] le ciel est lu ligne par ligne : haut de la texture en haut de l\'écran, bas à l\'horizon', () => {
+  const avant = TX.sky;
+  TX.sky = texFromCanvas(makeCanvas(256, 128, x => { x.fillStyle = '#ff0000'; x.fillRect(0, 0, 256, 64); x.fillStyle = '#0000ff'; x.fillRect(0, 64, 256, 64); }));
+  try {
+    avecCarte(['#########################################', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#...................P...................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '#.......................................#', '####################E####################'], i => {   // grande salle : murs lointains, l'horizon reste visible
+      MAPS[i].sky = true; startLevel(i); for (const e of G.enemies) e.state = 'dead';
+      G.P.a = 1; gameDraw();
+      const d = ctx.getImageData(0, 0, W, H).data, px = (x, y) => { const k = (y * W + x) * 4; return [d[k], d[k + 1], d[k + 2]]; };
+      let rouges = 0, bleus = 0;
+      for (let x = 0; x < W; x += 8) { const [r, , b] = px(x, 3); if (r > 150 && b < 80) rouges++; }
+      // juste au-dessus de l'horizon : le bas de la texture (bleu), là où aucun mur n'est dessiné
+      for (let y = 0; y < H / 2; y++) for (let x = 0; x < W; x += 8) { const [r, , b] = px(x, y); if (b > 150 && r < 80) bleus++; }
+      assert(rouges > W / 16 && bleus > 0, `ciel mal lu : ${rouges} colonnes rouges en haut, ${bleus} pixels bleus (bas de la texture)`);
+    });
+  } finally { TX.sky = avant; startGame(); }
+});
+
+/* ---------------- résultat ---------------- */
+document.getElementById('out').innerHTML = rows.join('');
+const sum = document.getElementById('sum');
+sum.className = nKo ? 'ko' : nWarn ? 'warn' : 'ok';
+sum.textContent = nKo ? `ÉCHEC : ${nKo} test(s) en échec, ${nOk} OK, ${nWarn} alerte(s)` : `TOUT EST VERT : ${nOk} tests OK` + (nWarn ? `, ${nWarn} alerte(s)` : '');
+document.title = (nKo ? '❌ ' : '✅ ') + 'DOOMED — tests';
+window.TEST_RESULT = { ok: nOk, ko: nKo, warn: nWarn };
+</script>
+</body>
+</html>
