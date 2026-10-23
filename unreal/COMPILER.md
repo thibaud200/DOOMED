@@ -70,11 +70,38 @@ python Doom\outils\fabriquer_jeu.py --niveaux 5,18-20   ces niveaux en plus
 python Doom\outils\fabriquer_jeu.py --sans-reconstruire packaging seul
 ```
 
+## Éditeur de niveaux
+
+Une page web locale pour dessiner les niveaux à la main, comme l'éditeur de la version navigateur, mais pour les
+niveaux construits dans Unreal.
+
+**Lancer** : double-clic sur `Doom\Editeur_niveaux.bat` (ou `python methode\outils\editeur.py --profil
+Doom\profil\jeu.json`). La page s'ouvre sur http://127.0.0.1:8770/ ; fermer la fenêtre de commande arrête l'éditeur.
+
+**Sans Unreal** (Python seul), on peut :
+- choisir un niveau dans la liste de gauche, avec ses photos s'il a déjà été construit ;
+- peindre la grille : **Pinceau** (clic : la case choisie dans la palette, clic droit : du sol) ou **Rectangle**
+  (glisser pour remplir), **Ctrl+Z / Ctrl+Y** pour annuler / rétablir, zoom ;
+- cocher **Extérieur (ciel)** pour un niveau à ciel ouvert (falaises, soleil, saut autorisé) ;
+- **Contrôler** : la grille est-elle jouable ? (sortie atteignable depuis le départ en ramassant les clés, portes
+  bien placées, secrets, embuscades…) ; **Réparer** corrige automatiquement ce qui peut l'être ;
+- **Enregistrer** : écrit `Doom\profil\fiches\E<n>\carte.json` ; l'ancienne grille est gardée dans
+  `E<n>\historique\`.
+
+La légende des cases (murs, portes et clés de couleur, monstres, objets, lave, décor) vient de `Doom\profil\jeu.json`.
+
+**Avec Unreal** : le bouton **Construire dans Unreal** construit les niveaux enregistrés dans le projet (l'éditeur
+Unreal doit pouvoir s'ouvrir : étapes 1 à 5 faites), les contrôle en jeu et prend leurs photos ; le journal s'affiche dans
+la page. `Doom\Tester_niveau.bat <n>` ouvre ensuite le niveau `n` dans Unreal pour y jouer. Pour que la modification
+arrive dans le jeu packagé, relancer `python Doom\outils\fabriquer_jeu.py` : il ne reconstruit que les niveaux modifiés.
+
+> Le jeu de la Release ne lit pas ces grilles : ses niveaux sont construits à l'avance et cuits dans le paquet. Éditer
+> un niveau demande donc toujours Unreal pour la construction et le packaging.
+
 ## Pour bricoler
 
-- **Un niveau** : éditer sa grille dans `Doom\profil\fiches\E<n>\carte.json` (ou avec l'éditeur de niveaux,
-  `Doom\Editeur_niveaux.bat`), puis relancer `fabriquer_jeu.py`. `Doom\Tester_niveau.bat <n>` ouvre un niveau dans
-  l'éditeur pour y jouer. Légende des cases et règles : `Doom\profil\jeu.json`.
+- **Un niveau** : avec l'éditeur ci-dessus, ou directement dans `Doom\profil\fiches\E<n>\carte.json`, puis relancer
+  `fabriquer_jeu.py`.
 - **La logique de jeu** (portes, secrets, lave, objets, monstres) : fichiers `Doom\outils\dsl\*.dsl`, réécrits dans les
   Blueprints par `creer_acteurs.py`.
 - **La construction d'un niveau** (murs, instances, lumières, ciel) : `Doom\outils\construire_niveau.py`.
