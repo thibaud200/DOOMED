@@ -1,0 +1,16 @@
+{
+ "numero": 79,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:36 carte_ok",
+  "22/10 12:48 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 4 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (24, 17) | embuscade creusée en (12, 12)",
+  "22/10 18:23 controle_ok",
+  "23/10 00:33 controle_ok",
+  "23/10 10:56 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E80 — LA CATHÉDRALE NOYÉE",
+ "enrichi": true,
+ "empreinte": "88bdb366bbdfd097"
+}

@@ -1,0 +1,17 @@
+{
+ "numero": 67,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:01 carte_ok",
+  "22/10 12:32 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (3, 19) | embuscade creusée en (13, 19)",
+  "22/10 18:19 controle_ok",
+  "23/10 00:20 controle_ok",
+  "23/10 09:59 controle_ok",
+  "23/10 10:47 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E68 — LA CHAPELLE FUMÉE",
+ "enrichi": true,
+ "empreinte": "55f0b645e1be86e4"
+}

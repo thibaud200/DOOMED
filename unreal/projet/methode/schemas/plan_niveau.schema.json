@@ -1,0 +1,68 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "plan_niveau",
+ "title": "Plan général d'un niveau (vue d'ensemble)",
+ "description": "Première fiche d'un niveau : le modèle décide du parcours avant de dessiner quoi que ce soit. Chaque fiche suivante (carte, peuplement) est demandée en rappelant ce plan.",
+ "type": "object",
+ "required": ["niveau", "nom", "theme", "style", "taille", "zones", "parcours", "progression", "temps_forts", "croquis"],
+ "additionalProperties": false,
+ "properties": {
+  "niveau": {"type": "integer", "minimum": 1, "description": "numéro du niveau dans la campagne"},
+  "nom": {"type": "string", "minLength": 3, "maxLength": 40, "description": "nom affiché, ex. « E3 — NÉCROPOLE »"},
+  "theme": {"type": "string", "minLength": 10, "maxLength": 300, "description": "lieu et ambiance en une ou deux phrases"},
+  "style": {"type": "string", "description": "un style d'habillage du profil (habillage.styles)"},
+  "exterieur": {"type": "boolean", "default": false, "description": "true = ciel visible"},
+  "taille": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2, "description": "[largeur, hauteur] en cases, dans les bornes du profil"},
+  "zones": {
+   "type": "array", "minItems": 3, "maxItems": 12,
+   "description": "les grandes zones du niveau",
+   "items": {
+    "type": "object",
+    "required": ["id", "nom", "role", "taille", "ennemis", "objets"],
+    "additionalProperties": false,
+    "properties": {
+     "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{1,20}$", "description": "identifiant court, ex. hangar"},
+     "nom": {"type": "string", "description": "nom lisible"},
+     "role": {"enum": ["depart", "passage", "combat", "arene", "embuscade", "recompense", "secret", "cle", "sortie"]},
+     "taille": {"enum": ["couloir", "petite", "moyenne", "grande", "immense"], "description": "couloir = 1 case de large ; petite 3-4 cases ; moyenne 5-7 ; grande 8-10 ; immense 11 et plus"},
+     "murs": {"enum": ["brique", "tech", "mixte"], "default": "mixte"},
+     "ennemis": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}, "description": "caractère du monstre → nombre, ex. {\"1\": 3, \"4\": 2}"},
+     "objets": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}, "description": "caractère de l'objet → nombre"},
+     "lave": {"type": "boolean", "default": false},
+     "note": {"type": "string", "maxLength": 200}
+    }
+   }
+  },
+  "parcours": {
+   "type": "array", "minItems": 2,
+   "description": "liaisons entre zones, dans l'ordre où le joueur les découvre",
+   "items": {
+    "type": "object",
+    "required": ["de", "vers", "par"],
+    "additionalProperties": false,
+    "properties": {
+     "de": {"type": "string"}, "vers": {"type": "string"},
+     "par": {"enum": ["ouvert", "porte", "porte_rouge", "porte_bleue", "porte_jaune", "secret"]}
+    }
+   }
+  },
+  "progression": {
+   "type": "object",
+   "required": ["cles", "secrets", "difficulte"],
+   "additionalProperties": false,
+   "properties": {
+    "cles": {"type": "array", "items": {"type": "object", "required": ["couleur", "zone", "ouvre"], "additionalProperties": false,
+     "properties": {"couleur": {"enum": ["rouge", "bleue", "jaune"]}, "zone": {"type": "string"}, "ouvre": {"type": "string", "description": "id de la zone derrière la porte"}}}},
+    "secrets": {"type": "array", "items": {"type": "object", "required": ["zone", "contenu"], "additionalProperties": false,
+     "properties": {"zone": {"type": "string"}, "contenu": {"type": "string"}}}},
+    "difficulte": {"type": "string", "description": "comment la difficulté monte au fil du parcours"},
+    "nouveau_monstre": {"type": ["string", "null"], "description": "caractère d'un monstre présenté dans ce niveau (au moins 3 fois)"}
+   }
+  },
+  "temps_forts": {"type": "array", "minItems": 1, "maxItems": 5, "items": {"type": "string"}, "description": "moments marquants, ex. « embuscade de diablotins à l'ouverture de la porte rouge »"},
+  "croquis": {
+   "type": "array", "minItems": 3, "maxItems": 10, "items": {"type": "string"},
+   "description": "plan grossier : une lettre par zone (première lettre de son id ou chiffre), « . » vide, « - » ou « | » liaison ; toutes les lignes de même longueur. Donne la place des zones les unes par rapport aux autres."
+  }
+ }
+}

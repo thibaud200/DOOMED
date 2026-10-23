@@ -1,0 +1,16 @@
+{
+ "numero": 88,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:59 carte_ok",
+  "22/10 13:00 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (25, 9) | embuscade creusée en (24, 16)",
+  "22/10 18:26 controle_ok",
+  "23/10 00:43 controle_ok",
+  "23/10 10:59 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E89 — LE CŒUR DE GLACE",
+ "enrichi": true,
+ "empreinte": "8796cd25bf9ff5b6"
+}

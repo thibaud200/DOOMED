@@ -1,0 +1,24 @@
+{
+ "numero": 38,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:46 carte_ok",
+  "22/10 02:32 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:44 carte_ok : corrigée : 1. deplacer : fait | 2. poser : fait | monstre 4 (7,2) éloigné du départ → (9, 2)",
+  "22/10 02:55 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:05 carte_ok : corrigée : 1. deplacer : fait | 2. retirer : fait | 3. essayer : contrôle : monstre (9,2) à moins de 4 cases du départ | monstre 4 (9,2) éloigné du départ → (11, 2)",
+  "22/10 03:13 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:46 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:12 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés",
+  "22/10 18:08 controle_ok",
+  "22/10 23:49 controle_ok",
+  "23/10 09:44 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E39 — FONDRIÈRE DES CENDRES",
+ "enrichi": true,
+ "empreinte": "4953543f8f6c65bb"
+}

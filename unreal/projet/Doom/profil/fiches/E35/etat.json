@@ -1,0 +1,24 @@
+{
+ "numero": 35,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:30 carte_ok",
+  "22/10 02:31 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:42 echec : correction impossible",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:45 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:08 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (35, 19) | embuscade creusée en (34, 2)",
+  "22/10 18:06 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:28 controle_ok",
+  "22/10 23:47 controle_ok",
+  "23/10 09:41 controle_ok",
+  "23/10 10:17 controle_ok"
+ ],
+ "corrections": 1,
+ "suivant": "E36 — CATHÉDRALE FONDUE",
+ "enrichi": true,
+ "empreinte": "e453d411a07028ad"
+}

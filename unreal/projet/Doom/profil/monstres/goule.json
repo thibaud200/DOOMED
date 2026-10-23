@@ -1,0 +1,37 @@
+{
+ "type": "goule",
+ "nom": "Goule des conduits",
+ "car": "g",
+ "resume": "Rôdeur rapide des niveaux techniques : fonce au contact et crache une petite boule verte quand le joueur recule.",
+ "description": "Humanoïde décharné à la peau grise tendue sur les os, longs bras griffus, mâchoire fendue jusqu'aux oreilles, restes de combinaison de mécanicien.",
+ "prompt_image": "emaciated grey humanoid ghoul, long clawed arms, split jaw, torn mechanic jumpsuit, full body, single creature, plain dark background, gritty sci-fi horror style",
+ "intro": 5,
+ "stats": {
+  "hp": 90,
+  "speed": 2.2,
+  "melee": 15,
+  "r": 0.3,
+  "fly": 0
+ },
+ "attaque": {
+  "mode": "boule",
+  "couleur": "green",
+  "portee": [
+   2,
+   7
+  ],
+  "recharge": [
+   2,
+   3.5
+  ],
+  "degats": [
+   6,
+   10
+  ],
+  "vitesse": 6
+ },
+ "lache": null,
+ "role": "chasseur",
+ "special": "aucun",
+ "puissance": 0
+}

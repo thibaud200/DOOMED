@@ -1,0 +1,16 @@
+{
+ "numero": 89,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 12:01 carte_ok",
+  "22/10 13:02 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (8, 15) | embuscade creusée en (29, 9) | bonus I posé en (19, 8)",
+  "22/10 18:26 controle_ok",
+  "23/10 00:45 controle_ok",
+  "23/10 10:59 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E90 — LE RESEAU FUMANT",
+ "enrichi": true,
+ "empreinte": "76367d6fd711b2cc"
+}

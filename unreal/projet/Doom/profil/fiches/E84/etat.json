@@ -1,0 +1,16 @@
+{
+ "numero": 84,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:48 carte_ok",
+  "22/10 12:55 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (13, 21) | embuscade creusée en (19, 16) | bonus K posé en (22, 11)",
+  "22/10 18:25 controle_ok",
+  "23/10 00:38 controle_ok",
+  "23/10 10:57 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E85 — LA SERRE INVERSALE",
+ "enrichi": true,
+ "empreinte": "0eacb7ff3b462cc3"
+}

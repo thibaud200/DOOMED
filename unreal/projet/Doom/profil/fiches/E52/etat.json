@@ -1,0 +1,17 @@
+{
+ "numero": 52,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:20 carte_ok",
+  "22/10 12:12 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — embuscade creusée en (12, 14) | embuscade creusée en (21, 18)",
+  "22/10 18:14 controle_ok",
+  "23/10 00:00 controle_ok",
+  "23/10 09:56 controle_ok",
+  "23/10 10:26 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E53 — LE VENTRE DU RIFLEUR",
+ "enrichi": true,
+ "empreinte": "395e5dbe62ea4365"
+}

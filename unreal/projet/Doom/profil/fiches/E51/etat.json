@@ -1,0 +1,17 @@
+{
+ "numero": 51,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:18 carte_ok",
+  "22/10 12:11 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (28, 22) | embuscade creusée en (13, 18) | bonus K posé en (19, 11)",
+  "22/10 18:14 controle_ok",
+  "22/10 23:59 controle_ok",
+  "23/10 09:56 controle_ok",
+  "23/10 10:25 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E52 — L'ABATTOIR VERT",
+ "enrichi": true,
+ "empreinte": "1cc0e4afd4a91a49"
+}

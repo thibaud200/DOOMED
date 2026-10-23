@@ -1,0 +1,19 @@
+{
+ "numero": 68,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:03 carte_ok",
+  "22/10 12:34 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — Cicatrisé de cuivre présenté (3 remplacements) | embuscade creusée en (33, 3) | embuscade creusée en (19, 5)",
+  "22/10 18:19 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:46 controle_ok",
+  "23/10 00:20 controle_ok",
+  "23/10 10:01 controle_ok",
+  "23/10 10:48 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E69 — LA CATHÉDRAL DE FER",
+ "enrichi": true,
+ "empreinte": "59f55aab6c95016a"
+}

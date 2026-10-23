@@ -7,6 +7,9 @@ Un jeu de tir à l'ancienne, façon Doom, en deux versions :
 | [`html/`](html/) | Navigateur (moteur maison en JavaScript, rendu « raycasting » pixelisé) | ouvrir `html/index.html` (ou `html/Jouer.bat` sous Windows) |
 | [`unreal/`](unreal/) | Unreal Engine 5.8, en 3D (95 niveaux, menus, sauvegarde en 5 emplacements) | télécharger l'archive de la [dernière Release](https://github.com/thibaud200/DOOMED/releases/latest), la décompresser et lancer `DOOMED/Doom.exe` (Windows 64 bits, DirectX 12) |
 
+Pour bricoler la version Unreal et la recompiler : [`unreal/COMPILER.md`](unreal/COMPILER.md) (nos fichiers sources
+sont dans `unreal/projet/` ; le moteur et les packs Fab se récupèrent à part).
+
 ## Commandes
 
 | Action | Version navigateur | Version Unreal |

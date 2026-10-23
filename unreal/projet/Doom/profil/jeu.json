@@ -1,0 +1,258 @@
+{
+ "_role": "Profil du jeu DOOMED pour la version Unreal : tout ce que le modèle local a le droit d'utiliser et les limites à respecter. Lu avec methode/README_MODELE.md. Modifié par Claude ou l'humain, jamais par le modèle.",
+ "jeu": "DOOMED",
+ "genre": "FPS rétro façon Doom 1993, niveaux en grille, monstres en sprites 8 angles, décor sci-fi moderne",
+ "projet_unreal": "C:\\workspace IA\\Unreal\\Doom\\Doom.uproject",
+
+ "echelle": {
+  "case_cm": 400,
+  "hauteur_cm": 400,
+  "joueur_cm": 180,
+  "cm_par_pixel_sprite": 3.2,
+  "note": "Une case de la carte = un carré de 4 m sur 4 m, murs de 4 m de haut. Un couloir = 1 case de large ; une salle normale = 4 à 8 cases de côté ; une grande arène = 10 cases et plus."
+ },
+
+ "carte": {
+  "forme": "grille rectangulaire de caractères, toutes les lignes de même longueur",
+  "taille_min": [20, 20],
+  "taille_max": [42, 30],
+  "legende": {
+   "#": "mur de brique",
+   "%": "mur tech (métal)",
+   "$": "mur secret : ressemble à un mur, s'ouvre avec E, doit cacher un petit réduit avec un objet",
+   "E": "interrupteur de sortie (dans un mur, touche E) : au moins une case de sol à côté",
+   "|": "décor : colonne (abri sur toute la hauteur, laisse passer autour)",
+   "+": "décor : armoire basse (abri à hauteur de taille)",
+   "T": "décor : terminal (salle de contrôle)",
+   "D": "décor : bureau (abri bas)",
+   "Y": "décor : étagère (réserve)",
+   "\"": "décor : cloison vitrée (on voit à travers, on ne passe pas)",
+   "Q": "décor : arbre mort (extérieurs)",
+   "O": "décor : rocher (extérieurs, abri bas)",
+   "_": "décor : rambarde (autour d'un bassin de lave, bloque le passage)",
+   "!": "mur d'embuscade : ressemble à un mur, s'ouvre tout seul quand le joueur passe tout près ; cache un réduit avec des monstres",
+   ".": "sol",
+   "~": "sol de lave (blesse), à mettre en bassins contournables",
+   "P": "départ du joueur (exactement 1)",
+   "=": "porte (s'ouvre à l'approche)",
+   "R": "porte rouge (il faut la clé rouge r)",
+   "B": "porte bleue (il faut la clé bleue b)",
+   "J": "porte jaune (il faut la clé jaune j)",
+   "1": "monstre diablotin (imp)", "2": "monstre démon rose (pinky)", "3": "monstre cacodémon (caco, volant)",
+   "4": "monstre soldat zombie (soldier)", "5": "monstre âme perdue (lostsoul, volant)", "6": "monstre baron (baron, chef)",
+   "@": "monstre sporeling", "&": "monstre vulturion (volant)",
+   "H": "trousse de soin", "A": "boîte de cartouches", "m": "chargeur de balles", "k": "roquettes",
+   "S": "fusil à pompe (arme)", "C": "mitrailleuse (arme)", "L": "lance-roquettes (arme)",
+   "V": "armure", "M": "méga-sphère", "G": "sac à dos", "K": "berserk", "I": "invisibilité",
+   "r": "clé rouge", "b": "clé bleue", "j": "clé jaune"
+  },
+  "regles": [
+   "le bord de la carte est entièrement fait de murs (# % $ E)",
+   "exactement un départ P",
+   "au moins un interrupteur E qui touche une case de sol",
+   "chaque porte (= R B J) a des murs de part et d'autre et du sol devant et derrière (porte encadrée)",
+   "chaque porte de couleur a sa clé dans le niveau, accessible AVANT la porte",
+   "la sortie est atteignable depuis le départ (en ouvrant les portes avec les clés trouvées en route)",
+   "aucun monstre à moins de 4 cases du départ",
+   "les monstres et objets sont posés sur des cases de sol, jamais dans un mur",
+   "chaque mur secret $ donne sur un réduit de sol qui contient au moins un objet"
+  ],
+  "categories": {
+   "_role": "lu par methode\\outils\\fiches.py : rôle de chaque caractère pour les contrôles et réparations automatiques",
+   "murs": "#%$E!", "mur_defaut": "#", "embuscade": "!", "decor": "|+TDY\"_QO", "portes": "=RBJ", "cles": {"R": "r", "B": "b", "J": "j"},
+   "sol": ".~", "sol_defaut": ".", "danger": "~", "depart": "P", "sortie": "E", "secret": "$",
+   "monstres": "123456@&", "objets": "HAmkSCLVMGKIrbj", "soin": "H", "munitions": "Amk",
+   "distance_depart_min": 4, "soin_pour_ennemis": 6, "chef": "6", "chefs_max": 2
+  },
+  "lumiere": "optionnelle : une seconde grille de même taille, chiffres 0 à 9 (intensité), f = lumière qui clignote",
+  "ciel": "optionnel : sky = true pour un niveau en extérieur"
+ },
+
+ "habillage": {
+  "defaut": "scifi",
+  "styles": {
+   "scifi": "modules 3D du pack « Modular SciFi Season 1 Starter Bundle » : panneaux muraux, dalles, caissons de plafond (mis à l'échelle de la case)",
+   "texture": "cubes texturés Freedoom agrandis (rendu plus rétro)"
+  },
+  "note": "Le modèle choisit le style du niveau ; le choix des modules case par case est fait par l'outil."
+ },
+
+ "gabarits": {
+  "monstre": {
+   "blueprint": "/Game/DOOMED/Monstres/BP_DoomMonstre",
+   "description": "monstre générique : sprite 8 angles, réveil à la vue du joueur, poursuite, attaque, douleur, mort",
+   "comportements_attaque": {
+    "corps_a_corps": "morsure / griffe quand il est au contact (champ melee > 0)",
+    "boule": "lance une boule de feu (couleurs : fire, blue, green) entre une portée min et max",
+    "balle": "tir instantané (comme un soldat), dégâts entre deux bornes",
+    "charge": "se jette sur le joueur et blesse au contact (âme perdue, vulturion)",
+    "aucun": "pas d'attaque à distance"
+   },
+   "bornes": {
+    "hp": [15, 1000],
+    "speed": [0.8, 3.0],
+    "melee": [0, 40],
+    "r": [0.25, 0.5],
+    "fly": [0, 0.4],
+    "portee_min": [1, 8],
+    "portee_max": [4, 16],
+    "recharge_s": [0.8, 5],
+    "degats": [3, 40]
+   },
+   "unites": "vitesses en cases par seconde, portées en cases, comme le jeu HTML ; l'outil convertit pour Unreal",
+   "speciaux": {
+    "aucun": "rien de plus",
+    "explose": "explose à sa mort : puissance = dégâts autour de lui (10 à 60), blesse aussi les autres monstres",
+    "regenere": "se soigne en continu : puissance = PV par seconde (2 à 15)",
+    "rafale": "tire 3 coups par attaque (mode balle ou boule)"
+   },
+   "roles": {
+    "_role": "chaque nouveau monstre reçoit un rôle ; ses chiffres doivent rester dans les fourchettes du rôle (contrôlé par l'outil)",
+    "essaim": {"description": "petit, rapide et fragile, attaque au contact, vient en groupe", "hp": [15, 45], "speed": [2.3, 3.0], "mode": ["aucun"], "melee": [5, 15]},
+    "kamikaze": {"description": "fonce sur le joueur et explose à sa mort ; il faut l'abattre de loin", "hp": [20, 60], "speed": [2.0, 3.0], "mode": ["charge"], "special": "explose"},
+    "tireur_elite": {"description": "reste loin, tire de très loin, fragile et lent", "hp": [20, 70], "speed": [0.8, 1.4], "mode": ["balle"], "portee_max": [12, 16]},
+    "mitrailleur": {"description": "tire des rafales de trois coups à moyenne portée", "hp": [60, 200], "speed": [1.0, 1.8], "mode": ["balle"], "special": "rafale"},
+    "artilleur": {"description": "lance de grosses boules lentes de très loin, lent et résistant", "hp": [150, 400], "speed": [0.8, 1.3], "mode": ["boule"], "portee_max": [12, 16]},
+    "regenerateur": {"description": "se soigne sans cesse : il faut concentrer le feu sur lui", "hp": [150, 450], "speed": [1.0, 1.8], "special": "regenere"},
+    "tank": {"description": "très résistant et lent, frappe fort", "hp": [250, 1000], "speed": [0.8, 1.3]},
+    "chasseur": {"description": "poursuit le joueur à bonne vitesse, griffe et tire un peu", "hp": [60, 200], "speed": [1.6, 2.6]},
+    "volant": {"description": "vole au-dessus des obstacles et harcèle", "hp": [40, 250], "fly": [0.2, 0.4]}
+   }
+  },
+  "objet": {"blueprint": "/Game/DOOMED/Monstres/BP_DoomObjet", "types": ["soin", "munitions", "bonus de vie"]},
+  "arme": {"blueprint": "/Game/Variant_Shooter/Blueprints/Pickups/BP_ShooterPickup", "armes": ["Pistol", "Rifle", "GrenadeLauncher"]},
+  "porte": {"blueprint": "/Game/LevelPrototyping/Interactable/Door/BP_DoorFrame"},
+  "actionnable": {"blueprint": "/Game/DOOMED/Monstres/BP_DoomActionnable", "usages": ["passage secret ($)", "sortie (E)"]}
+ },
+
+ "monstres_existants": {
+  "1": {"type": "imp", "nom": "Diablotin", "hp": 60, "attaque": "boule fire + griffe", "role": "de base, partout"},
+  "2": {"type": "pinky", "nom": "Démon rose", "hp": 150, "attaque": "morsure seulement, rapide", "role": "fonce sur le joueur, dangereux en groupe"},
+  "3": {"type": "caco", "nom": "Cacodémon", "hp": 200, "attaque": "boule blue, vole", "role": "grandes salles"},
+  "4": {"type": "soldier", "nom": "Soldat zombie", "hp": 20, "attaque": "balle", "role": "chair à canon à distance, lâche des balles"},
+  "5": {"type": "lostsoul", "nom": "Âme perdue", "hp": 30, "attaque": "charge, vole", "role": "harcèlement"},
+  "6": {"type": "baron", "nom": "Baron", "hp": 600, "attaque": "boule green + griffe", "role": "chef, un ou deux par niveau au plus, fin de niveau"},
+  "@": {"type": "sporeling", "nom": "Sporeling", "hp": 120, "attaque": "boule green", "role": "créé par le modèle (E12)"},
+  "&": {"type": "vulture", "nom": "Vulturion des cendres", "hp": 450, "attaque": "charge, vole", "role": "créé par le modèle (E16)"}
+ },
+
+ "difficulte": {
+  "note": "Repères tirés des 20 niveaux du jeu HTML (taille, nombre d'ennemis et d'objets). La difficulté monte d'un niveau à l'autre.",
+  "reperes": [
+   {"niveau": 1, "taille": [24, 24], "ennemis": 7, "objets": 11, "portes": 5, "secrets": 1},
+   {"niveau": 2, "taille": [24, 24], "ennemis": 13, "objets": 13, "portes": 3, "secrets": 1},
+   {"niveau": 5, "taille": [37, 24], "ennemis": 22, "objets": 14, "portes": 3, "secrets": 0},
+   {"niveau": 10, "taille": [33, 23], "ennemis": 17, "objets": 21, "portes": 2, "secrets": 1},
+   {"niveau": 15, "taille": [36, 27], "ennemis": 20, "objets": 13, "portes": 0, "secrets": 1},
+   {"niveau": 20, "taille": [41, 29], "ennemis": 21, "objets": 13, "portes": 1, "secrets": 0}
+  ],
+  "regles": [
+   "un objet de soin (H) au moins pour 6 ennemis",
+   "des munitions (A, m, k) près des combats importants",
+   "un nouveau monstre apparaît au moins 3 fois dans le niveau où on le présente",
+   "au plus 2 barons (6) par niveau"
+  ]
+ },
+
+ "outils_construction": {
+  "_role": "Ce que la chaîne sait déjà faire avec une fiche validée (écrit par Claude).",
+  "construire_niveau": "python Doom\\outils\\construire.py <numéro> : grille → niveau Unreal complet (murs sci-fi, portes, monstres, objets, secrets, sortie, navigation)",
+  "creer_monstre": "python Doom\\outils\\creer_monstre.py <fiche> : fiche monstre → images ComfyUI, planche 8 angles, inscription dans profil\\monstres",
+  "ordres": "python methode\\outils\\fiches.py ordres <ordres> <carte> : liste d'ordres appliquée sur la fiche carte, avec rapport ligne par ligne",
+  "controler": "python Doom\\outils\\controler.py <carte> <rapport> : acteurs présents et chemins de navigation dans le niveau construit",
+  "enchainer": "python methode\\enchainer.py --niveaux N : tout le cycle sans intervention (voir METHODE_IA_LOCALE.md)"
+ },
+
+ "construction": {
+  "_role": "Valeurs techniques lues par Doom\\outils\\construire_niveau.py (écrit par Claude). Le modèle n'y touche pas.",
+  "source_cartes": "C:\\workspace IA\\Unreal\\DOOMED_import\\doomed.json",
+  "racine": "/Game/DOOMED",
+  "textures": {"brique": "BRICK7", "tech": "STARTAN3", "sortie": "EXITSTON", "sol": "FLOOR4_8", "plafond": "CEIL3_5", "porte": "BIGDOOR2", "lave": "LAVA1", "terre": "RROCK18", "roche": "ROCK4", "roche_brulee": "RROCK05"},
+  "textures_repet_largeur": {"brique": 2.0},
+  "lumiere": {"intensite": 1500.0, "rayon": 1400.0, "ev100": 3.0, "pas_cases": 3},
+  "habillages": {
+   "scifi": {"mur": "/Game/StarterBundle/ModularSci_Int/Meshes/SM_Wall_B", "sol": "/Game/StarterBundle/ModularSci_Int/Meshes/SM_FloorPanel_A", "plafond": "/Game/StarterBundle/ModularSci_Int/Meshes/SM_Ceiling_B"}
+  },
+  "blueprints": {
+   "monstre": "/Game/DOOMED/Monstres/BP_DoomMonstre",
+   "objet": "/Game/DOOMED/Monstres/BP_DoomObjet",
+   "actionnable": "/Game/DOOMED/Monstres/BP_DoomActionnable",
+   "arme": "/Game/Variant_Shooter/Blueprints/Pickups/BP_ShooterPickup",
+   "liste_armes": "/Game/Variant_Shooter/Blueprints/Pickups/DT_WeaponList",
+   "porte": "/Game/LevelPrototyping/Interactable/Door/BP_DoorFrame",
+   "porte_maillage": "/Game/LevelPrototyping/Interactable/Door/Meshes/SM_Door",
+   "mode_de_jeu": "/Game/Variant_Shooter/Blueprints/BP_ShooterGameMode"
+  },
+  "conversion": {
+   "_note": "Arena Shooter : joueur à 500 PV (100 dans DOOMED), balle de 25 → PV des monstres ×2, dégâts ×5 ; vitesse : 600 cm/s pour 3,2 cases/s",
+   "pv": 2.0, "degats": 5.0, "vitesse_cm_s_par_case_s": 187.5, "hd": 4,
+   "reveil_cases": 12, "portee_melee_marge_cm": 94
+  },
+  "tailles_monstres": {"_note": "[rayon, hauteur] en unités Doom (1 unité = cm_par_pixel_sprite)",
+   "imp": [20, 56], "pinky": [30, 56], "caco": [31, 56], "soldier": [20, 56], "lostsoul": [16, 56], "baron": [24, 64], "sporeling": [24, 40], "vulture": [30, 56]},
+  "couleurs_projectile": {"fire": 0, "blue": 1, "green": 2},
+  "objets": {"_note": "type d'objet du jeu HTML → [Type de BP_DoomObjet (0 soin, 1 munitions, 2 bonus de vie), valeur en PV DOOMED]",
+   "medkit": [0, 25], "mega": [2, 200], "armor": [2, 200], "ammo": [1, 0], "bullets": [1, 0], "rockets": [1, 0], "backpack": [1, 0],
+   "keyRed": [3, 1], "keyBlue": [3, 2], "keyYellow": [3, 3], "berserk": [4, 0], "invis": [5, 30]},
+  "armes": {"shotgun": "Rifle", "chaingun": "Rifle", "launcher": "GrenadeLauncher"},
+  "arme_depart": "Pistol",
+  "exterieur": {
+   "_note": "niveaux à ciel ouvert (carte : sky = true) : pas de plafond, ciel d'Unreal au crépuscule rouge, soleil rasant, brume orange, sol de terre, falaises de roche plus hautes, rochers 3D le long des parois",
+   "hauteur_murs": 600, "sol": "terre", "mur": "roche", "sol_lave": "roche_brulee",
+   "rochers": ["/Game/StarterBundle/UE4_Assets/Environment_A/Meshes/SM_Cave_Rock_Large_01a", "/Game/StarterBundle/UE4_Assets/Environment_A/Meshes/SM_Cave_Rock_Med_01a"],
+   "part_rochers": 0.3, "materiau_rochers": "roche",
+   "soleil": {"tangage": -20, "cap": 40, "intensite": 10.0, "couleur": [1.0, 0.5, 0.25]},
+   "appoint": {"tangage": -55, "cap": 220, "intensite": 2.5, "couleur": [0.9, 0.55, 0.4]},
+   "lumiere_ciel": 4.0,
+   "ciel": {"rayleigh": [0.45, 0.12, 0.06], "nuages": true},
+   "brouillard": {"densite": 0.015, "couleur": [0.35, 0.12, 0.04]},
+   "ev100": 1.0
+  },
+  "lave": {"_note": "case ~ : dalle de lave lumineuse + brûlure (dégâts du jeu HTML : 10 PV/s, convertis)", "degats_par_s": 10, "emissif": 1.6},
+  "decor": {
+   "_note": "objets de décor : maillage du pack (purement visuel) + boîte de collision invisible (largeur, profondeur en fraction de case, hauteur cm) ; « etirer » : le maillage couvre toute la case dans le sens de la cloison",
+   "|": {"maillage": "/Game/StarterBundle/ModularSci_Int/Meshes/SM_Win_Post_A", "taille": [0.45, 0.45, 400], "ajuste": true},
+   "+": {"maillage": "/Game/StarterBundle/ModularScifiProps/Meshes/SM_Cabinet_A", "taille": [0.55, 0.3, 90]},
+   "T": {"maillage": "/Game/StarterBundle/ModularSci_Comm/Meshes/SM_Terminal_A", "taille": [0.4, 0.75, 150]},
+   "D": {"maillage": "/Game/StarterBundle/ModularScifiProps/Meshes/SM_Desk_A_v1", "taille": [0.75, 0.3, 95]},
+   "Y": {"maillage": "/Game/StarterBundle/ModularScifiProps/Meshes/SM_Shelf_A_v1", "taille": [0.5, 0.2, 150]},
+   "\"": {"maillage": "/Game/StarterBundle/ModularScifiProps/Meshes/SM_GlassDivider", "taille": [1.0, 0.1, 220], "etirer": true},
+   "Q": {"maillage": "/Game/UndergroundSciFi/Meshes/SM_JoshuaTree01", "taille": [0.25, 0.25, 320], "echelle": 2.6, "materiau": "roche_brulee"},
+   "O": {"maillage": "/Game/StarterBundle/UE4_Assets/Environment_A/Meshes/SM_Cave_Rock_Med_01a", "taille": [0.5, 0.5, 260], "echelle": 0.85, "materiau": "roche"},
+   "_": {"maillage": "/Game/StarterBundle/ModularSci_Comm/Meshes/SM_Railing_Center", "taille": [1.0, 0.15, 110], "etirer": true}
+  }
+ },
+
+ "chaine": {
+  "_role": "Lu par methode\\enchainer.py : comment ce jeu se construit sans intervention (écrit par Claude). Chemins relatifs à racine ; {python} = l'interpréteur de l'enchaîneur.",
+  "racine": "C:\\workspace IA\\Unreal",
+  "modele": "qwen3.8-27b@q3_k_xl",
+  "contexte": 16384,
+  "fiches": "Doom\\profil\\fiches",
+  "premier_nouveau_niveau": 21,
+  "niveau_retour": "E1 — HANGAR",
+  "jouer": "Doom\\Tester_niveau.bat",
+  "empreinte": ["Doom\\outils\\construire_niveau.py", "Doom\\outils\\construire.py", "Doom\\profil\\monstres"],
+  "essais_fiche": 3,
+  "tours_correction": 2,
+  "commandes": {
+   "construire": ["{python}", "Doom\\outils\\construire.py", "{carte}", "SUIVANT={suivant}"],
+   "construire_export": ["{python}", "Doom\\outils\\construire.py", "{index}"],
+   "controler": ["{python}", "Doom\\outils\\controler.py", "{carte}", "{rapport}"],
+   "controler_export": ["{python}", "Doom\\outils\\controler.py", "{index}", "{rapport}"],
+   "images_monstre": ["{python}", "Doom\\outils\\creer_monstre.py", "{fiche}"],
+   "photos": ["{python}", "Doom\\outils\\photos_niveau.py", "{numero}"],
+   "importer_monstres": ["{python}", "Doom\\outils\\ue_py.py", "Doom\\outils\\creer_sprites.py"],
+   "editeur_repond": ["{python}", "Doom\\outils\\ue_py.py", "-c", "print('ok')"],
+   "editeur_quitter": ["{python}", "Doom\\outils\\ue_py.py", "-c", "import unreal; unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True); unreal.SystemLibrary.quit_editor()"],
+   "materiaux_instances": ["{python}", "Doom\\outils\\ue_py.py", "Doom\\outils\\materiaux_instances.py"]
+  },
+  "editeur": {
+   "exe": "C:\\Program Files\\Epic Games\\UE_5.8\\Engine\\Binaries\\Win64\\UnrealEditor.exe",
+   "projet": "C:\\workspace IA\\Unreal\\Doom\\Doom.uproject",
+   "arguments": ["-culture=en"],
+   "processus": "UnrealEditor.exe",
+   "attente_s": 1200
+  }
+ }
+}

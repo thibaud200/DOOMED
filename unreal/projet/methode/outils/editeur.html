@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Éditeur de niveaux</title>
+<style>
+:root{--fond:#141416;--panneau:#1d1d22;--bord:#333;--texte:#ddd;--gris:#888;--accent:#e33}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--texte);font:14px/1.4 Consolas,monospace;display:flex;height:100vh;overflow:hidden}
+#gauche{width:250px;border-right:1px solid var(--bord);display:flex;flex-direction:column}
+#gauche h1{color:var(--accent);font-size:17px;margin:10px 12px 6px}
+#filtre{margin:0 12px 8px;padding:4px;background:#000;color:var(--texte);border:1px solid var(--bord);font:inherit}
+#liste{overflow:auto;flex:1}
+.niv{padding:5px 12px;cursor:pointer;border-bottom:1px solid #222}
+.niv:hover{background:#26262c}.niv.choisi{background:#3a1d1d}
+.niv small{color:var(--gris)}
+#centre{flex:1;display:flex;flex-direction:column;min-width:0}
+#barre{padding:6px 10px;border-bottom:1px solid var(--bord);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{background:#2a2a30;color:var(--texte);border:1px solid #444;padding:4px 9px;font:inherit;cursor:pointer;border-radius:3px}
+button:hover{border-color:var(--accent)}button.actif{background:#5a2020;border-color:var(--accent)}
+button.fort{background:#1e5e2a}
+#palette{padding:6px 10px;border-bottom:1px solid var(--bord);display:flex;flex-wrap:wrap;gap:3px}
+.case{width:26px;height:26px;border:1px solid #444;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#000;border-radius:3px}
+.case.choisie{outline:2px solid #fff;outline-offset:1px}
+#zone{flex:1;overflow:auto;padding:10px;position:relative}
+#grille{image-rendering:pixelated;cursor:crosshair;display:block}
+#info{padding:4px 10px;border-top:1px solid var(--bord);color:var(--gris);min-height:24px}
+#droite{width:360px;border-left:1px solid var(--bord);overflow:auto;padding:10px}
+#droite img{width:100%;margin-bottom:6px;border:1px solid var(--bord);cursor:zoom-in}
+.err{color:#f66}.al{color:#fc6}.ok{color:#8d8}
+#journal{white-space:pre-wrap;font-size:12px;color:#bbb;max-height:220px;overflow:auto;background:#000;padding:6px}
+#loupe{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;z-index:9}
+#loupe img{max-width:96vw;max-height:96vh}
+</style></head><body>
+<div id="gauche"><h1 id="titre">Éditeur de niveaux</h1>
+  <input id="filtre" placeholder="filtrer (numéro, nom)…"><div id="liste"></div></div>
+<div id="centre">
+  <div id="barre">
+    <b id="nom">—</b>
+    <button id="bPinceau" class="actif" title="clic : peindre · clic droit : sol">Pinceau</button>
+    <button id="bRect" title="glisser : remplir un rectangle (clic droit : de sol)">Rectangle</button>
+    <button id="bAnnuler" title="Ctrl+Z">↶</button><button id="bRefaire" title="Ctrl+Y">↷</button>
+    <label>zoom <input id="zoom" type="range" min="10" max="40" value="22"></label>
+    <label title="niveau à ciel ouvert : ciel, soleil, falaises de roche, pas de plafond"><input type="checkbox" id="ciel"> Extérieur (ciel)</label>
+    <button id="bControler">Contrôler</button><button id="bReparer">Réparer</button>
+    <button id="bEnregistrer" class="fort">Enregistrer</button>
+    <button id="bConstruire" title="construit dans Unreal les niveaux enregistrés, puis contrôle et photos">Construire dans Unreal</button>
+    <span id="modif" class="al"></span>
+  </div>
+  <div id="palette"></div>
+  <div id="zone"><canvas id="grille"></canvas></div>
+  <div id="info">Choisis un niveau à gauche.</div>
+</div>
+<div id="droite">
+  <div id="theme" class="gris"></div>
+  <div id="photos"></div>
+  <h3>Contrôle</h3><div id="controle" class="gris">—</div>
+  <h3>Unreal</h3><div id="journal">—</div>
+</div>
+<div id="loupe" onclick="this.style.display='none'"><img></div>
+<script>
+const $ = s => document.querySelector(s);
+let P, CAT, LEG, niveaux = [], n = null, rows = null, pile = [], refaire = [], choix = '#', outil = 'pinceau', marques = [], modifie = false;
+const COUL = {mur:'#5b2a22', tech:'#566070', sol:'#2a2a2e', lave:'#e0601a', porte:'#c8a040', R:'#e03030', B:'#3060e0', J:'#e0d030',
+  secret:'#a040c0', embuscade:'#d050ff', depart:'#40a0ff', sortie:'#30ff60', monstre:'#ff3030', chef:'#ff00aa', objet:'#40d070', cle:'#ffffff', decor:'#9a8a6a'};
+function couleur(ch){
+  if(ch===CAT.depart) return COUL.depart; if(ch===CAT.sortie) return COUL.sortie; if(ch===CAT.secret) return COUL.secret;
+  if(ch===CAT.embuscade) return COUL.embuscade;
+  if(ch==='%') return COUL.tech; if(CAT.murs.includes(ch)) return COUL.mur;
+  if(CAT.danger.includes(ch)) return COUL.lave; if(COUL[ch] && CAT.portes.includes(ch)) return COUL[ch];
+  if(CAT.portes.includes(ch)) return COUL.porte; if(ch===CAT.chef) return COUL.chef;
+  if(CAT.monstres.includes(ch)) return COUL.monstre; if(Object.values(CAT.cles).includes(ch)) return COUL.cle;
+  if((CAT.decor||'').includes(ch)) return COUL.decor;
+  if(CAT.objets.includes(ch)) return COUL.objet; return COUL.sol;
+}
+const pastille = ch => CAT.monstres.includes(ch)||CAT.objets.includes(ch)||ch===CAT.depart;
+async function api(u, corps){ const r = await fetch(u, corps===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corps)}); return [r.status, await r.json()]; }
+
+function dessiner(){
+  if(!rows) return; const t=+$('#zoom').value, c=$('#grille'), g=c.getContext('2d');
+  c.width=rows[0].length*t; c.height=rows.length*t;
+  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{
+    g.fillStyle = pastille(ch) ? COUL.sol : couleur(ch); g.fillRect(x*t,y*t,t,t);
+    if(pastille(ch)){ g.fillStyle=couleur(ch); g.beginPath(); g.arc(x*t+t/2,y*t+t/2,t*.4,0,7); g.fill();
+      if(t>=14){ g.fillStyle='#000'; g.font=`bold ${Math.round(t*.6)}px Consolas`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(ch,x*t+t/2,y*t+t/2+1);} }
+    else if(t>=12 && !'#%.'.includes(ch)){ g.fillStyle='#000'; g.font=`bold ${Math.round(t*.55)}px Consolas`; g.textAlign='center'; g.textBaseline='middle'; g.fillText(ch,x*t+t/2,y*t+t/2+1); }
+  }));
+  g.strokeStyle='#ffffff10'; g.lineWidth=1;
+  for(let x=0;x<=rows[0].length;x++){g.beginPath();g.moveTo(x*t+.5,0);g.lineTo(x*t+.5,c.height);g.stroke();}
+  for(let y=0;y<=rows.length;y++){g.beginPath();g.moveTo(0,y*t+.5);g.lineTo(c.width,y*t+.5);g.stroke();}
+  g.strokeStyle='#ff2020'; g.lineWidth=3; marques.forEach(([x,y])=>g.strokeRect(x*t+1.5,y*t+1.5,t-3,t-3));
+  if(rect){ g.strokeStyle='#fff'; g.lineWidth=2; const [a,b,c2,d]=norm(rect); g.strokeRect(a*t,b*t,(c2-a+1)*t,(d-b+1)*t); }
+}
+function palette(){
+  const P_=$('#palette'); P_.innerHTML='';
+  const ordre=[...CAT.murs, CAT.embuscade||'', ...CAT.sol, ...CAT.portes, CAT.depart, ...(CAT.decor||''), ...CAT.monstres, ...CAT.objets].join('');
+  [...new Set(ordre)].filter(ch=>LEG[ch]).forEach(ch=>{ const d=document.createElement('div'); d.className='case'+(ch===choix?' choisie':'');
+    d.style.background=couleur(ch); d.textContent='#%.'.includes(ch)?'':ch; d.title=`« ${ch} » — ${LEG[ch]}`;
+    d.onclick=()=>{choix=ch; palette(); info(`Pinceau : « ${ch} » — ${LEG[ch]}`);}; P_.appendChild(d); });
+}
+function info(t){ $('#info').textContent=t; }
+function marquerModif(v){ modifie=v; $('#modif').textContent=v?'● non enregistré':''; }
+function poser(x,y,ch){ if(y<0||y>=rows.length||x<0||x>=rows[0].length) return; const r=rows[y]; if(r[x]===ch) return; rows[y]=r.slice(0,x)+ch+r.slice(x+1); }
+function sauver(){ pile.push(rows.slice()); if(pile.length>200) pile.shift(); refaire=[]; }
+function norm([a,b,c,d]){ return [Math.min(a,c),Math.min(b,d),Math.max(a,c),Math.max(b,d)]; }
+let appui=null, rect=null;
+const cellule = e => { const t=+$('#zoom').value, r=$('#grille').getBoundingClientRect(); return [Math.floor((e.clientX-r.left)/t), Math.floor((e.clientY-r.top)/t)]; };
+$('#grille').oncontextmenu = e => e.preventDefault();
+$('#grille').onmousedown = e => { if(!rows) return; const [x,y]=cellule(e); appui={bouton:e.button, ch:e.button===2?CAT.sol_defaut:choix};
+  sauver(); if(outil==='rect'){ rect=[x,y,x,y]; } else { poser(x,y,appui.ch); marquerModif(true); } dessiner(); };
+$('#grille').onmousemove = e => { if(!rows) return; const [x,y]=cellule(e);
+  if(y>=0&&y<rows.length&&x>=0&&x<rows[0].length){ const ch=rows[y][x]; info(`(${x},${y}) « ${ch} » — ${LEG[ch]||'?'}`); }
+  if(!appui) return; if(outil==='rect'){ rect[2]=x; rect[3]=y; } else { poser(x,y,appui.ch); marquerModif(true); } dessiner(); };
+window.onmouseup = () => { if(appui && outil==='rect' && rect){ const [a,b,c,d]=norm(rect); for(let y=b;y<=d;y++) for(let x=a;x<=c;x++) poser(x,y,appui.ch); marquerModif(true); }
+  appui=null; rect=null; dessiner(); };
+function annuler(){ if(!pile.length) return; refaire.push(rows.slice()); rows=pile.pop(); marquerModif(true); dessiner(); }
+function retablir(){ if(!refaire.length) return; pile.push(rows.slice()); rows=refaire.pop(); marquerModif(true); dessiner(); }
+$('#bAnnuler').onclick=annuler; $('#bRefaire').onclick=retablir;
+window.onkeydown = e => { if(e.ctrlKey&&e.key==='z'){e.preventDefault();annuler();} if(e.ctrlKey&&(e.key==='y'||e.key==='Z')){e.preventDefault();retablir();} };
+$('#bPinceau').onclick=()=>{outil='pinceau'; $('#bPinceau').classList.add('actif'); $('#bRect').classList.remove('actif');};
+$('#bRect').onclick=()=>{outil='rect'; $('#bRect').classList.add('actif'); $('#bPinceau').classList.remove('actif');};
+$('#zoom').oninput=dessiner;
+$('#ciel').onchange=()=>marquerModif(true);
+
+function afficherControle(r){
+  const e=s=>String(s).replace(/</g,'&lt;'); marques=[];
+  [...(r.erreurs||[]), ...(r.alertes||[])].forEach(m=>{ for(const k of m.matchAll(/\((\d+),\s*(\d+)\)/g)) marques.push([+k[1],+k[2]]); });
+  $('#controle').innerHTML = (r.erreurs.length?r.erreurs.map(m=>`<div class="err">✖ ${e(m)}</div>`).join(''):'<div class="ok">✔ jouable : aucune erreur</div>')
+    + r.alertes.map(m=>`<div class="al">⚠ ${e(m)}</div>`).join('') + (r.couloirs!=null?`<div class="gris">couloirs : ${r.couloirs} %</div>`:'');
+  dessiner();
+}
+$('#bControler').onclick = async ()=>{ if(!rows) return; const [,r]=await api('/api/valider',{rows}); afficherControle(r); };
+$('#bReparer').onclick = async ()=>{ if(!rows) return; const [,r]=await api('/api/reparer',{rows}); sauver(); rows=r.rows; marquerModif(true);
+  $('#controle').innerHTML = r.notes.length ? r.notes.map(m=>`<div class="al">↻ ${m}</div>`).join('') : '<div class="ok">rien à réparer</div>'; dessiner(); };
+$('#bEnregistrer').onclick = async ()=>{ if(!rows) return; const sky=$('#ciel').checked; let [s,r]=await api(`/api/enregistrer/${n}`,{rows,sky});
+  if(s===409){ afficherControle({erreurs:r.erreurs,alertes:[]}); if(!confirm('Le niveau a des erreurs (voir à droite). Enregistrer quand même ?')) return; [s,r]=await api(`/api/enregistrer/${n}`,{rows,sky,forcer:true}); }
+  if(s===200){ marquerModif(false); info(`E${n} enregistré — « Construire dans Unreal » pour le voir en 3D`); charger_liste(); } };
+$('#bConstruire').onclick = async ()=>{ if(modifie && !confirm('Des modifications ne sont pas enregistrées : construire la version enregistrée ?')) return;
+  const [s,r]=await api(`/api/construire/${n}`,{}); if(s!==200){ alert(r.erreur); return; } suivre(); };
+async function suivre(){ const [,t]=await api('/api/tache'); $('#journal').textContent=`[${t.etat}]\n`+t.journal.slice(-30).join('\n');
+  if(t.etat==='en cours') setTimeout(suivre, 3000); else if(n) ouvrir(n, true); }
+
+async function charger_liste(){ const [,l]=await api('/api/niveaux'); niveaux=l; filtrer(); }
+function filtrer(){ const f=$('#filtre').value.toLowerCase(); $('#liste').innerHTML='';
+  niveaux.filter(v=>!f || String(v.n)===f || v.nom.toLowerCase().includes(f)).forEach(v=>{ const d=document.createElement('div'); d.className='niv'+(v.n===n?' choisi':'');
+    const c=v.couloirs>40?'err':v.couloirs>25?'al':'ok';
+    d.innerHTML=`${v.nom}<br><small>${v.statut} · <span class="${c}">couloirs ${v.couloirs} %</span></small>`; d.onclick=()=>ouvrir(v.n); $('#liste').appendChild(d); }); }
+$('#filtre').oninput=filtrer;
+async function ouvrir(k, garder){ if(!garder && modifie && !confirm('Quitter sans enregistrer ?')) return;
+  const [s,r]=await api(`/api/niveau/${k}`); if(s!==200) return;
+  if(!garder || !modifie){ n=k; rows=r.carte.rows.slice(); pile=[]; refaire=[]; marques=[]; marquerModif(false); }
+  $('#nom').textContent=r.carte.nom; $('#theme').textContent=r.theme||''; $('#ciel').checked=!!r.carte.sky;
+  $('#photos').innerHTML = r.photos.length ? r.photos.map(p=>`<img src="${p}?${Date.now()}" title="${p.split('/').pop()}">`).join('') : '<div class="gris">pas encore de photos (construire dans Unreal)</div>';
+  document.querySelectorAll('#photos img').forEach(i=>i.onclick=()=>{ $('#loupe img').src=i.src; $('#loupe').style.display='flex'; });
+  $('#controle').textContent='—'; filtrer(); dessiner(); info(`E${k} — clic : « ${choix} » · clic droit : sol · Ctrl+Z : annuler`); }
+window.onbeforeunload = e => { if(modifie){ e.preventDefault(); e.returnValue=''; } };
+(async()=>{ const [,p]=await api('/api/profil'); P=p; CAT=p.categories; LEG=p.legende; $('#titre').textContent=(p.jeu||'')+' — éditeur'; palette(); await charger_liste(); suivre(); })();
+</script></body></html>

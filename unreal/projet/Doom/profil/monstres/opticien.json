@@ -1,0 +1,33 @@
+{
+ "type": "opticien",
+ "nom": "Opticien du vide",
+ "car": "o",
+ "resume": "Sniper spectral qui reste au loin dans les grands halls et perce le joueur d'une balle unique à très longue portée.",
+ "description": "Silhouette élancée en armure optique noire, visière de verre fumé couvrant tout le visage, bras droit remplacé par un canon télescope luisant d'un bleu froid ; il flotte à peine au-dessus du sol et ne bouge que très lentement.",
+ "prompt_image": "tall slender spectral sniper in black optical armor, smoked glass visor covering the whole face, right arm replaced by a glowing cold blue telescope cannon barrel, faintly hovering above ground, full body, single creature, plain dark background, gritty retro sci-fi horror style",
+ "intro": 30,
+ "stats": {
+  "hp": 50,
+  "speed": 1.0,
+  "melee": 0,
+  "r": 0.3,
+  "fly": 0
+ },
+ "attaque": {
+  "mode": "balle",
+  "portee": [
+   6,
+   15
+  ],
+  "recharge": [
+   2.5,
+   4
+  ],
+  "degats": [
+   18,
+   30
+  ]
+ },
+ "role": "tireur_elite",
+ "special": "aucun"
+}

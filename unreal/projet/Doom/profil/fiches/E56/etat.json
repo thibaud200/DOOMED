@@ -1,0 +1,17 @@
+{
+ "numero": 56,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:31 carte_ok",
+  "22/10 12:18 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (6, 15) | embuscade creusée en (4, 24)",
+  "22/10 18:15 controle_ok",
+  "23/10 00:05 controle_ok",
+  "23/10 09:57 controle_ok",
+  "23/10 10:32 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E57 — CRYPTES DE SEL",
+ "enrichi": true,
+ "empreinte": "0b063381c1e7e2e4"
+}

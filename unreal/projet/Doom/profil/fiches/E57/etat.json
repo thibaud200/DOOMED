@@ -1,0 +1,17 @@
+{
+ "numero": 57,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:34 carte_ok",
+  "22/10 12:19 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — Fondu de cuivre présenté (3 remplacements) | 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (33, 3) | embuscade creusée en (30, 18) | bonus K posé en (20, 4) | bonus I posé en (23, 4)",
+  "22/10 18:15 controle_ok",
+  "23/10 00:07 controle_ok",
+  "23/10 09:57 controle_ok",
+  "23/10 10:33 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E58 — RÉSERVOIR D'OMBRES",
+ "enrichi": true,
+ "empreinte": "b720d90c3afbb20d"
+}

@@ -1,0 +1,57 @@
+; BP_DoomObjet — objet à ramasser de DOOMED (EventGraph).
+; Type : 0 trousse (Valeur PV, pas au-delà du maximum) · 1 munitions (recharge l'arme en main)
+;        2 bonus de PV au-delà du maximum, jusqu'à Valeur (armure, méga-sphère : Arena Shooter n'a pas d'armure)
+;        3 clé (Valeur 1 rouge · 2 bleue · 3 jaune) : déverrouille les portes de sa couleur (BP_DoomActionnable Type 2)
+;        4 berserk : soins complets · 5 invisibilité : les monstres ne voient plus le joueur pendant Valeur secondes
+; Le joueur est le personnage Arena Shooter (BP_ShooterCharacter : Current HP, Max HP, Current Weapon).
+
+(event EventTick (DeltaSeconds)
+  (bind regard (Math|Rotator|FindLookatRotation (Transformation|GetActorLocation)
+                 (Camera|GetCameraLocation :self (Game|GetPlayerCameraManager 0))))
+  (Transformation|SetWorldRotation :self (Variables|Default|GetPivot) :NewRotation (Math|Rotator|MakeRotator 0 0 (+ (.yaw regard) 90))))
+
+(event Collision|EventActorBeginOverlap (OtherActor)
+  (bind perso (Utilities|Casting|CastToBP_ShooterCharacter :Object OtherActor)
+    (:then
+      (bind type (Variables|Default|GetType))
+      (bind pv (Class|BPShooterCharacter|GetCurrentHP :self perso))
+      (bind pvmax (Class|BPShooterCharacter|GetMaxHP :self perso))
+      (if (== type 0)
+        (if (< pv pvmax)
+          (Class|BPShooterCharacter|SetCurrentHP :self perso :"Current HP" (Math|Float|Min(Float) (+ pv (Variables|Default|GetValeur)) pvmax))
+          (Actor|DestroyActor))
+        (elif (== type 1)
+          (bind arme (Class|BPShooterCharacter|GetCurrentWeapon :self perso))
+          (Utilities|IsValid arme
+            (:"Is Valid"
+              (Class|BPShooterWeaponBase|SetCurrentBullets :self arme :"Current Bullets" (Class|BPShooterWeaponBase|GetMagSize :self arme))
+              (Class|BPShooterCharacter|UpdateWeaponHUD :self perso)
+              (Actor|DestroyActor))
+            (:"Is Not Valid"))
+          (elif (== type 3)
+            (bind couleur (Math|Float|Floor (Variables|Default|GetValeur)))
+            (for a (Actor|GetAllActorsOfClass :ActorClass "/Game/DOOMED/Monstres/BP_DoomActionnable.BP_DoomActionnable_C")
+              (bind porte (Utilities|Casting|CastToBP_DoomActionnable :Object a)
+                (:then
+                  (if (and (== (Class|BPDoomActionnable|GetType :self porte) 2) (== (Class|BPDoomActionnable|GetCouleur :self porte) couleur))
+                    (Class|BPDoomActionnable|SetDeverrouille :self porte :Deverrouille true)))
+                (:CastFailed)))
+            (Development|PrintString :InString "Clé ramassée !" :TextColor (Utilities|Struct|MakeLinearColor 1.0 0.9 0.3 1.0) :Duration 2.5)
+            (Actor|DestroyActor)
+            (elif (== type 4)
+              (Class|BPShooterCharacter|SetCurrentHP :self perso :"Current HP" (Math|Float|Max(Float) pv pvmax))
+              (Development|PrintString :InString "BERSERK !" :TextColor (Utilities|Struct|MakeLinearColor 1.0 0.1 0.1 1.0) :Duration 2.5)
+              (Actor|DestroyActor)
+              (elif (== type 5)
+                (bind fin (+ (Utilities|Time|GetGameTimeinSeconds) (Variables|Default|GetValeur)))
+                (for m (Actor|GetAllActorsOfClass :ActorClass "/Game/DOOMED/Monstres/BP_DoomMonstre.BP_DoomMonstre_C")
+                  (bind mo (Utilities|Casting|CastToBP_DoomMonstre :Object m)
+                    (:then (Class|BPDoomMonstre|SetAveugle :self mo :Aveugle fin))
+                    (:CastFailed)))
+                (Development|PrintString :InString "INVISIBILITÉ" :TextColor (Utilities|Struct|MakeLinearColor 0.6 0.6 1.0 1.0) :Duration 2.5)
+                (Actor|DestroyActor)
+                (else
+                  (if (< pv (Variables|Default|GetValeur))
+                    (Class|BPShooterCharacter|SetCurrentHP :self perso :"Current HP" (Math|Float|Min(Float) (+ pv 100.0) (Variables|Default|GetValeur)))
+                    (Actor|DestroyActor)))))))))
+    (:CastFailed)))

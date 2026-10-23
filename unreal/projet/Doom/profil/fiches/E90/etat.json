@@ -1,0 +1,17 @@
+{
+ "numero": 90,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 12:04 carte_ok",
+  "22/10 13:03 controle_ok",
+  "22/10 16:11 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (18, 20) | embuscade creusée en (31, 11) | bonus K posé en (20, 6)",
+  "22/10 18:27 controle_ok",
+  "23/10 00:46 controle_ok",
+  "23/10 10:59 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E91 — LA CATHÉDRALE SOUFFLÉE",
+ "enrichi": true,
+ "empreinte": "a1c0e839788e7bc9"
+}

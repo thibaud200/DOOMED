@@ -1,0 +1,16 @@
+{
+ "numero": 93,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 15:51 carte_ok",
+  "22/10 16:08 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (38, 14) | embuscade creusée en (28, 8) | bonus K posé en (24, 13) | bonus I posé en (22, 13) | soin ajouté en (9, 10)",
+  "22/10 18:28 controle_ok",
+  "23/10 00:50 controle_ok",
+  "23/10 11:01 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E94 — LE COULOIR DES SENTINELLES",
+ "enrichi": true,
+ "empreinte": "8e3ab9ef37e1c56c"
+}

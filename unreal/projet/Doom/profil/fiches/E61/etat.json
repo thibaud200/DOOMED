@@ -1,0 +1,17 @@
+{
+ "numero": 61,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:44 carte_ok",
+  "22/10 12:24 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (23, 24) | embuscade creusée en (35, 23)",
+  "22/10 18:17 controle_ok",
+  "23/10 00:12 controle_ok",
+  "23/10 09:58 controle_ok",
+  "23/10 10:39 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E62 — L'ÉCLUSE NOIRE",
+ "enrichi": true,
+ "empreinte": "6bd00aeb4e7fa8e8"
+}

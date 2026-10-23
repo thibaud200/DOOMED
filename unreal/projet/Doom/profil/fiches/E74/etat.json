@@ -1,0 +1,16 @@
+{
+ "numero": 74,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:22 carte_ok",
+  "22/10 12:42 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 4 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (20, 22) | embuscade creusée en (27, 12)",
+  "22/10 18:21 controle_ok",
+  "23/10 00:26 controle_ok",
+  "23/10 10:54 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E75 — LE VENTRE DU PAVÉ",
+ "enrichi": true,
+ "empreinte": "d82b740505f2084c"
+}

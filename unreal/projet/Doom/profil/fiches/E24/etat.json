@@ -1,0 +1,26 @@
+{
+ "numero": 24,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:43 carte_ok",
+  "22/10 02:29 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:38 carte_ok : corrigée : 1. deplacer : fait | 2. retirer : fait | 3. changer_case : fait | 4. poser : fait | 5. essayer : contrôle : aucune erreur",
+  "22/10 02:53 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:00 carte_ok : corrigée : 2. changer_case : fait | 3. poser : fait | 4. essayer : contrôle : aucune erreur",
+  "22/10 03:11 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:42 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 07:57 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | bonus K posé en (38, 11)",
+  "22/10 18:01 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:21 controle_ok",
+  "22/10 23:37 controle_ok",
+  "23/10 09:34 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E25 — CATHÉDRALE GELÉE",
+ "enrichi": true,
+ "empreinte": "2b0c87b5360bd65c"
+}

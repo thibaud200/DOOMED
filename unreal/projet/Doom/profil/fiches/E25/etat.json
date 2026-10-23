@@ -1,0 +1,24 @@
+{
+ "numero": 25,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:46 carte_ok",
+  "22/10 02:29 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:39 echec : correction impossible",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:43 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 07:59 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | bonus I posé en (8, 19) | clé j en double retirée (17,10)",
+  "22/10 18:02 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:22 controle_ok",
+  "22/10 23:38 controle_ok",
+  "23/10 09:35 controle_ok",
+  "23/10 10:08 controle_ok"
+ ],
+ "corrections": 1,
+ "suivant": "E26 — FOUNDRY OF EMBERS",
+ "enrichi": true,
+ "empreinte": "9fd102bc412fc8ad"
+}

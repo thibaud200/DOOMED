@@ -1,0 +1,18 @@
+{
+ "numero": 28,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:57 echec : plan refusé après tous les essais",
+  "22/10 10:10 carte_ok",
+  "22/10 12:07 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (19, 19) | embuscade creusée en (22, 11)",
+  "22/10 18:03 controle_ok",
+  "22/10 23:41 controle_ok",
+  "23/10 09:37 controle_ok",
+  "23/10 10:11 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E29 — NÉCROSPHERE",
+ "enrichi": true,
+ "empreinte": "dcebad830ea7c196"
+}

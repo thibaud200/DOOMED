@@ -1,0 +1,21 @@
+{
+ "numero": 81,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:40 carte_ok",
+  "22/10 12:51 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 1 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (8, 13) | embuscade creusée en (13, 17) | bonus K posé en (11, 12) | bonus I posé en (5, 12)",
+  "22/10 18:24 controle_ok",
+  "22/10 20:51 carte_ok : à reconstruire : extérieur",
+  "22/10 21:09 controle_ok",
+  "22/10 21:17 carte_ok : extérieur meublé : 7 objets de décor posés dans les zones dégagées",
+  "22/10 21:29 controle_ok",
+  "22/10 21:32 carte_ok : à reconstruire : rochers et arbres aux textures du niveau",
+  "22/10 21:47 controle_ok",
+  "23/10 00:34 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E82 — LE CHANTIER HÉLIOS",
+ "enrichi": true,
+ "empreinte": "c07567e2af9ac7d8"
+}

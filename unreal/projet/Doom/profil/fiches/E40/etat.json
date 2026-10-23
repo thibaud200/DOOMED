@@ -1,0 +1,24 @@
+{
+ "numero": 40,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:53 carte_ok",
+  "22/10 02:32 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:46 echec : correction impossible",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:47 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:15 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — Cogneur de cuivre présenté (3 remplacements) | 1 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (32, 11)",
+  "22/10 18:09 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:35 controle_ok",
+  "22/10 23:50 controle_ok",
+  "23/10 09:47 controle_ok",
+  "23/10 10:18 controle_ok"
+ ],
+ "corrections": 1,
+ "suivant": "E41 — FORGE DE CENDRES",
+ "enrichi": true,
+ "empreinte": "f780a86fecae5dc2"
+}

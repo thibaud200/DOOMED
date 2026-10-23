@@ -1,0 +1,24 @@
+{
+ "numero": 6,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:22 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (36, 14) | bonus K posé en (7, 11) | soin ajouté en (24, 13)",
+  "22/10 17:39 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:11 controle_ok",
+  "22/10 20:51 carte_ok : à reconstruire : extérieur",
+  "22/10 20:55 controle_ok",
+  "22/10 21:32 carte_ok : à reconstruire : rochers et arbres aux textures du niveau",
+  "22/10 21:32 controle_ok",
+  "22/10 23:02 controle_ok",
+  "22/10 23:27 controle_ok",
+  "23/10 00:55 controle_ok",
+  "23/10 09:20 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E7 — L’ABYSSE DU MIROIR",
+ "empreinte": "055779aef3d9293f"
+}

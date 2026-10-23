@@ -1,0 +1,21 @@
+{
+ "type": "mordant",
+ "nom": "Mordant de cuivre",
+ "car": "w",
+ "resume": "Petit parasite rapide qui infeste les conduits et saute au visage du joueur pour mordre, toujours en groupe.",
+ "description": "Créature menotte à la carapace cuivrée luisante, quatre pattes fines et nerveuses, gueule pleine de dents pointues comme des aiguilles, yeux rouges brillants. Taille d'un chien petit format, se déplace par bonds rapides au sol.",
+ "prompt_image": "small copper-armored parasite creature, four thin nervous legs, sharp needle-like teeth in open jaw, glowing red eyes, leaping pose, full body, single creature, plain dark background, gritty sci-fi horror style",
+ "intro": 9,
+ "stats": {
+  "hp": 35,
+  "speed": 2.7,
+  "melee": 10,
+  "r": 0.3,
+  "fly": 0
+ },
+ "attaque": {
+  "mode": "aucun"
+ },
+ "role": "essaim",
+ "special": "aucun"
+}

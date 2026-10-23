@@ -1,0 +1,17 @@
+{
+ "numero": 58,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:36 carte_ok",
+  "22/10 12:20 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (13, 19) | embuscade creusée en (35, 16)",
+  "22/10 18:16 controle_ok",
+  "23/10 00:08 controle_ok",
+  "23/10 09:57 controle_ok",
+  "23/10 10:35 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E59 — CULTE DU VIDE",
+ "enrichi": true,
+ "empreinte": "b9173fadfc59ad8c"
+}

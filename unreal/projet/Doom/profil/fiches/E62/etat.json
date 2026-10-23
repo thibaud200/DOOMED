@@ -1,0 +1,17 @@
+{
+ "numero": 62,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:47 carte_ok",
+  "22/10 12:26 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — embuscade creusée en (32, 19) | embuscade creusée en (14, 13)",
+  "22/10 18:17 controle_ok",
+  "23/10 00:13 controle_ok",
+  "23/10 09:58 controle_ok",
+  "23/10 10:40 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E63 — LA SERRE MORTUAIRE",
+ "enrichi": true,
+ "empreinte": "ac68fd2721d702e6"
+}

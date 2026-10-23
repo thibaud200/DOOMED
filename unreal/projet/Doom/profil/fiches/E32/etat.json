@@ -1,0 +1,24 @@
+{
+ "numero": 32,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:15 carte_ok",
+  "22/10 02:30 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:41 carte_ok : corrigée : 1. changer_case : fait | 2. poser : fait | 3. changer_case : fait | 4. essayer : contrôle : 0 départs P (il en faut exactement 1) | départ ajouté en (1,1)",
+  "22/10 02:54 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:03 echec : correction impossible",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:44 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:03 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | clé r en double retirée (5,16) | clé r en double retirée (5,23)",
+  "22/10 18:05 controle_ok",
+  "22/10 23:45 controle_ok",
+  "23/10 09:39 controle_ok",
+  "23/10 10:15 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E33 — FORGE DES CENDRES",
+ "enrichi": true,
+ "empreinte": "27edace3468a51c0"
+}

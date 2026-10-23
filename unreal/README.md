@@ -10,5 +10,8 @@ Le jeu compilé est distribué en archive dans les **Releases** du dépôt (pas 
 
 Configuration : Windows 64 bits, carte graphique compatible DirectX 12.
 
+Pour modifier le jeu et le recompiler : nos fichiers sources sont dans [`projet/`](projet/), et la procédure dans
+[`COMPILER.md`](COMPILER.md).
+
 Contenu : 95 niveaux (intérieurs et extérieurs), menu de démarrage, pause (Échap ou P), sauvegarde en 5 emplacements.
 Les commandes sont dans le [README principal](../README.md#commandes).

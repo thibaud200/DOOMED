@@ -1,0 +1,17 @@
+{
+ "numero": 55,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:29 carte_ok",
+  "22/10 12:16 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (30, 19) | embuscade creusée en (28, 4) | soin ajouté en (27, 9)",
+  "22/10 18:15 controle_ok",
+  "23/10 00:04 controle_ok",
+  "23/10 09:56 controle_ok",
+  "23/10 10:30 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E56 — LE NID DE VERRE",
+ "enrichi": true,
+ "empreinte": "99db4f25bdf38f25"
+}

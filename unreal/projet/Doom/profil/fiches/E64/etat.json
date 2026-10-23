@@ -1,0 +1,17 @@
+{
+ "numero": 64,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:53 carte_ok",
+  "22/10 12:28 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 4 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (17, 5) | embuscade creusée en (35, 13) | soin ajouté en (15, 15)",
+  "22/10 18:18 controle_ok",
+  "23/10 00:16 controle_ok",
+  "23/10 09:59 controle_ok",
+  "23/10 10:43 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E65 — L'ANTRE DE BRUME",
+ "enrichi": true,
+ "empreinte": "e5b04a2f3448803c"
+}

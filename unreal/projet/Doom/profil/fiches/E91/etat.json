@@ -1,0 +1,16 @@
+{
+ "numero": 91,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 15:45 carte_ok",
+  "22/10 16:05 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (26, 12) | embuscade creusée en (22, 21)",
+  "22/10 18:27 controle_ok",
+  "23/10 00:47 controle_ok",
+  "23/10 11:00 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E92 — LE CULOT DE BRUME",
+ "enrichi": true,
+ "empreinte": "0eae6481a1394501"
+}

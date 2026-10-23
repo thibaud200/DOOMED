@@ -1,0 +1,19 @@
+{
+ "numero": 31,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:12 echec : carte refusée après tous les essais",
+  "22/10 08:31 carte_ok : carte de la nuit réparée par l'outil (3e baron)",
+  "22/10 08:33 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 4 monstre(s) de base remplacé(s) par des monstres créés",
+  "22/10 18:05 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:24 controle_ok",
+  "22/10 23:44 controle_ok",
+  "23/10 09:38 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E32 — CATHÉDRALE GELÉE",
+ "enrichi": true,
+ "empreinte": "a365be162891c295"
+}

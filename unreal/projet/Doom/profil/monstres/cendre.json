@@ -1,0 +1,35 @@
+{
+ "type": "cendre",
+ "nom": "Cendrelard explosif",
+ "car": "x",
+ "resume": "Petit parasite de cendre qui fonce droit sur le joueur et explose en nuage brûlant au contact ou à sa mort.",
+ "description": "Boule décharnée de chair carbonisée enveloppée d'une membrane translucide, quatre pattes griffues courtes, yeux incandescents orange, lueur rougeoyante pulsant dans son ventre gonflé comme une bombe biologique. Resemble à un imp mais plus petit et couvert de cendres.",
+ "prompt_image": "small carbonized flesh blob creature with translucent membrane skin, four short clawed legs, glowing orange eyes, red bioluminescent glow in swollen belly covered in ash and embers, full body single creature plain dark background gritty sci-fi horror style",
+ "intro": 15,
+ "stats": {
+  "hp": 40,
+  "speed": 2.6,
+  "melee": 0,
+  "r": 0.3,
+  "fly": 0
+ },
+ "attaque": {
+  "mode": "charge",
+  "portee": [
+   1,
+   8
+  ],
+  "recharge": [
+   1,
+   2
+  ],
+  "degats": [
+   5,
+   12
+  ],
+  "vitesse": 3.5
+ },
+ "role": "kamikaze",
+ "special": "explose",
+ "puissance": 30
+}

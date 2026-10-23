@@ -1,0 +1,16 @@
+{
+ "numero": 96,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 16:02 carte_ok",
+  "22/10 16:11 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (14, 15) | embuscade creusée en (38, 19) | bonus K posé en (28, 8)",
+  "22/10 18:28 controle_ok",
+  "23/10 00:52 controle_ok",
+  "23/10 11:01 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E1 — HANGAR",
+ "enrichi": true,
+ "empreinte": "e075c1376b662742"
+}

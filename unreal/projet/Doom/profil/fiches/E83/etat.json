@@ -1,0 +1,16 @@
+{
+ "numero": 83,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:45 carte_ok",
+  "22/10 12:54 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (27, 17) | embuscade creusée en (36, 3)",
+  "22/10 18:24 controle_ok",
+  "23/10 00:37 controle_ok",
+  "23/10 10:57 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E84 — LE BARRAGE HÉLIOS",
+ "enrichi": true,
+ "empreinte": "b72c8311054880af"
+}

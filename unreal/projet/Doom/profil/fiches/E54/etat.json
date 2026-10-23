@@ -1,0 +1,17 @@
+{
+ "numero": 54,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:27 carte_ok",
+  "22/10 12:15 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (37, 25) | embuscade creusée en (33, 5) | bonus K posé en (18, 10)",
+  "22/10 18:14 controle_ok",
+  "23/10 00:03 controle_ok",
+  "23/10 09:56 controle_ok",
+  "23/10 10:29 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E55 — LE LABYRINTHE SANGUIN",
+ "enrichi": true,
+ "empreinte": "6db52339113edad9"
+}

@@ -1,0 +1,35 @@
+{
+ "type": "cicatrice",
+ "nom": "Cicatrisé de cuivre",
+ "car": "n",
+ "resume": "Colosse mécanique encastré dans les murs : ses plaies se referment sans cesse, il faut le maintenir sous le feu pour l'abattre.",
+ "description": "Buste massif d'un ancien gardien de cuivre dont la cage thoracique est ouverte comme une gueule ; des lamelles métalliques bougent et se resoudent en continu sur les bords. Bras asymétriques, un seul épaulettes fumante, yeux creux qui luisent orange.",
+ "prompt_image": "massive copper golem torso with open ribcage, self-healing metal plates constantly welding and shifting along the wounds, one smoking shoulder pauldron, glowing orange eye sockets, full body single creature, plain dark background, gritty sci-fi horror style",
+ "intro": 68,
+ "stats": {
+  "hp": 320,
+  "speed": 1.4,
+  "melee": 25,
+  "r": 0.45,
+  "fly": 0
+ },
+ "attaque": {
+  "mode": "charge",
+  "portee": [
+   3,
+   8
+  ],
+  "recharge": [
+   2.5,
+   4
+  ],
+  "degats": [
+   18,
+   30
+  ],
+  "vitesse": 7
+ },
+ "role": "regenerateur",
+ "special": "regenere",
+ "puissance": 8
+}

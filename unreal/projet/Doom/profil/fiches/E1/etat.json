@@ -1,0 +1,17 @@
+{
+ "numero": 1,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 17:31 carte_ok : enrichi — bonus I posé en (8, 16)",
+  "22/10 17:32 controle_ok",
+  "22/10 22:38 controle_ok",
+  "22/10 22:57 controle_ok",
+  "22/10 23:22 controle_ok",
+  "23/10 09:16 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E2 — RAFFINERIE",
+ "empreinte": "9d0ce1bf6e9269f4"
+}

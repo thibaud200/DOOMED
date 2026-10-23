@@ -1,0 +1,17 @@
+{
+ "numero": 2,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:10 controle_ok",
+  "22/10 22:36 carte_ok : fiche créée depuis le jeu HTML",
+  "22/10 22:38 controle_ok",
+  "22/10 22:59 controle_ok",
+  "22/10 23:22 controle_ok",
+  "23/10 09:17 controle_ok",
+  "23/10 10:07 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "export",
+ "suivant": "E3 — NÉCROPOLE",
+ "empreinte": "7d384961d0de7a7d"
+}

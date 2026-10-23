@@ -1,0 +1,29 @@
+{
+ "numero": 26,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:49 carte_ok",
+  "22/10 02:29 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:40 carte_ok : corrigée : 1. deplacer : fait | 2. poser : fait | 3. essayer : contrôle : aucune erreur",
+  "22/10 02:53 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:01 carte_ok : corrigée : 1. changer_case : fait | 2. deplacer : fait | 3. changer_case : fait | 4. poser : fait",
+  "22/10 03:11 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:43 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:00 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (33, 21) | embuscade creusée en (32, 2) | clé r en double retirée (2,8) | soin ajouté en (22, 15)",
+  "22/10 18:02 controle_ok",
+  "22/10 18:21 carte_ok : retouche à la main (éditeur)",
+  "22/10 19:55 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:23 controle_ok",
+  "22/10 23:39 controle_ok",
+  "23/10 09:35 controle_ok",
+  "23/10 10:09 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E27 — GLACIAL NEXUS",
+ "enrichi": true,
+ "empreinte": "dc815b0565fad60a"
+}

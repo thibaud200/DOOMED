@@ -1,0 +1,26 @@
+{
+ "numero": 43,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 02:03 carte_ok",
+  "22/10 02:33 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:47 carte_ok : corrigée : 1. deplacer : fait | 2. essayer : contrôle : aucune erreur",
+  "22/10 02:57 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:07 echec : correction impossible",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:49 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:20 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (36, 7) | embuscade creusée en (36, 23)",
+  "22/10 18:10 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:40 controle_ok",
+  "22/10 23:51 controle_ok",
+  "23/10 09:51 controle_ok",
+  "23/10 10:18 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E44 — ORBITAL CENDRE",
+ "enrichi": true,
+ "empreinte": "5cd93352aa3a9fca"
+}

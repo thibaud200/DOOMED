@@ -1,0 +1,29 @@
+{
+ "numero": 27,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:52 carte_ok",
+  "22/10 02:30 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:41 carte_ok : corrigée : 1. deplacer : fait | 2. poser : fait | 3. deplacer : fait | 4. poser : fait | 5. deplacer : fait | 6. essayer : contrôle : aucune erreur",
+  "22/10 02:53 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:02 carte_ok : corrigée : 1. changer_case : fait | 2. essayer : contrôle : aucune erreur",
+  "22/10 03:11 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:44 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:02 controle_ok",
+  "22/10 08:31 carte_ok : reconstruit : sortie vers E31",
+  "22/10 08:31 controle_ok",
+  "22/10 13:06 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | bonus K posé en (36, 24) | clé r en double retirée (15,2) | clé b en double retirée (20,9)",
+  "22/10 18:03 controle_ok",
+  "22/10 18:26 carte_ok : retouche à la main (éditeur)",
+  "22/10 19:57 controle_ok",
+  "22/10 23:39 controle_ok",
+  "23/10 09:36 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E28 — CLOAQUE VIVANT",
+ "enrichi": true,
+ "empreinte": "ab7f485d9c44a07c"
+}

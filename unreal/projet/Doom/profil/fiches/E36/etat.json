@@ -1,0 +1,27 @@
+{
+ "numero": 36,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:36 carte_ok",
+  "22/10 02:31 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:43 carte_ok : corrigée : 1. deplacer : fait | 2. essayer : contrôle : monstre (7,2) à moins de 4 cases du départ; monstre (7,4) à moins de 4 cases du départ | monstre 4 (7,2) éloigné du départ → (9, 2) | monstre 5 (7,4) éloigné du départ → (9, 4)",
+  "22/10 02:55 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:04 carte_ok : corrigée : 1. changer_case : fait | 2. essayer : contrôle : 0 départs P (il en faut exactement 1) | départ ajouté en (1,1)",
+  "22/10 03:13 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:46 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:09 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (8, 17) | embuscade creusée en (21, 15) | bonus K posé en (28, 5)",
+  "22/10 18:07 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:30 controle_ok",
+  "22/10 23:48 controle_ok",
+  "23/10 09:43 controle_ok",
+  "23/10 10:17 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E37 — RÉACTEUR FISSURÉ",
+ "enrichi": true,
+ "empreinte": "7fa126454c4d2793"
+}

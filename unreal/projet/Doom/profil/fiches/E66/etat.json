@@ -1,0 +1,17 @@
+{
+ "numero": 66,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:58 carte_ok",
+  "22/10 12:31 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (27, 22) | embuscade creusée en (10, 5) | bonus K posé en (23, 10)",
+  "22/10 18:19 controle_ok",
+  "23/10 00:19 controle_ok",
+  "23/10 09:59 controle_ok",
+  "23/10 10:46 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E67 — LA GALERIE DES ÉCHOS",
+ "enrichi": true,
+ "empreinte": "39e4fed7aa2207ee"
+}

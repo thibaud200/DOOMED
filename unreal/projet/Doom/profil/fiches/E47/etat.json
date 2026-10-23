@@ -1,0 +1,24 @@
+{
+ "numero": 47,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 02:16 carte_ok",
+  "22/10 02:34 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:49 echec : correction impossible",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:50 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:26 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 1 monstre(s) de base remplacé(s) par des monstres créés",
+  "22/10 18:12 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:41 controle_ok",
+  "22/10 23:55 controle_ok",
+  "23/10 09:53 controle_ok",
+  "23/10 10:21 controle_ok"
+ ],
+ "corrections": 1,
+ "suivant": "E48 — CATHÉDRALE DE GLACE",
+ "enrichi": true,
+ "empreinte": "b8a6211ef1a538db"
+}

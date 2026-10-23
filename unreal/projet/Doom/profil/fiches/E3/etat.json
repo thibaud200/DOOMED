@@ -1,0 +1,17 @@
+{
+ "numero": 3,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:10 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — bonus K posé en (8, 16)",
+  "22/10 17:34 controle_ok",
+  "22/10 22:59 controle_ok",
+  "22/10 23:24 controle_ok",
+  "23/10 09:17 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E4 — NÉCROPOLE CÉLESTE",
+ "empreinte": "379b87e84b087fa8"
+}

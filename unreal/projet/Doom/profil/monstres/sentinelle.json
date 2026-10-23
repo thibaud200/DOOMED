@@ -1,0 +1,34 @@
+{
+ "type": "sentinelle",
+ "nom": "Sentinelle de cuivre",
+ "car": "s",
+ "resume": "Gardien statique des intersections : reste immobile et verrouille le couloir en tirant des rafales courtes jusqu'à ce qu'on la rapproche.",
+ "description": "Colosse mécanique à deux jambes massives, torse de plaques de cuivre vert-de-gris, bras droit transformé en canon court fumant, œil unique rouge incrusté dans le casque. Il ne bouge pas tant que le joueur est loin ; s'il approche trop près, il se jette sur lui avec un coup de poing fracassant.",
+ "prompt_image": "massive two-legged copper golem sentinel, rusted bronze armor plates, right arm is a short smoking cannon barrel, single glowing red eye in helmet, standing still full body, single creature, plain dark background, gritty sci-fi horror style",
+ "intro": 22,
+ "stats": {
+  "hp": 250,
+  "speed": 0.8,
+  "melee": 35,
+  "r": 0.45
+ },
+ "attaque": {
+  "mode": "balle",
+  "portee": [
+   3,
+   10
+  ],
+  "recharge": [
+   1.2,
+   2
+  ],
+  "degats": [
+   10,
+   16
+  ]
+ },
+ "lache": null,
+ "role": "tank",
+ "special": "aucun",
+ "puissance": 0
+}

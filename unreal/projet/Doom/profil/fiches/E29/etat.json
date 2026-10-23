@@ -1,0 +1,18 @@
+{
+ "numero": 29,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:01 echec : plan refusé après tous les essais",
+  "22/10 10:12 carte_ok",
+  "22/10 12:08 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (9, 21) | embuscade creusée en (33, 15) | bonus I posé en (17, 12)",
+  "22/10 18:04 controle_ok",
+  "22/10 23:42 controle_ok",
+  "23/10 09:37 controle_ok",
+  "23/10 10:12 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E30 — RÉSONANCE ABYSSALE",
+ "enrichi": true,
+ "empreinte": "ea7fe190927ce87a"
+}

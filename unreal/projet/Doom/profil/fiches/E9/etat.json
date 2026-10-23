@@ -1,0 +1,18 @@
+{
+ "numero": 9,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:23 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — Mordant de cuivre présenté (3 remplacements) | 2 monstre(s) de base remplacé(s) par des monstres créés | bonus K posé en (24, 18) | bonus I posé en (22, 17) | monstre w (2,4) éloigné du départ → (2, 7)",
+  "22/10 17:43 controle_ok",
+  "22/10 23:04 controle_ok",
+  "22/10 23:29 controle_ok",
+  "23/10 00:57 controle_ok",
+  "23/10 09:23 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E10 — LE CŒUR FRACTURÉ",
+ "empreinte": "223fc5d9d5d8a2f7"
+}

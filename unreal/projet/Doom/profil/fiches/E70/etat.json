@@ -1,0 +1,17 @@
+{
+ "numero": 70,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:09 carte_ok",
+  "22/10 12:36 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (31, 17) | embuscade creusée en (26, 12)",
+  "22/10 18:20 controle_ok",
+  "23/10 00:23 controle_ok",
+  "23/10 10:01 controle_ok",
+  "23/10 10:51 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E71 — LE VENTRE DU RIFLEUR",
+ "enrichi": true,
+ "empreinte": "2a213824c9423f80"
+}

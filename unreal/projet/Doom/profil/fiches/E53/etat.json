@@ -1,0 +1,17 @@
+{
+ "numero": 53,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:24 carte_ok",
+  "22/10 12:14 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (26, 17) | embuscade creusée en (19, 7) | bonus I posé en (39, 5) | soin ajouté en (20, 16)",
+  "22/10 18:14 controle_ok",
+  "23/10 00:01 controle_ok",
+  "23/10 09:56 controle_ok",
+  "23/10 10:28 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E54 — LA GORGEE DU CŒUR",
+ "enrichi": true,
+ "empreinte": "a94206d3b9c50ea2"
+}

@@ -1,0 +1,16 @@
+{
+ "numero": 92,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 15:48 carte_ok",
+  "22/10 16:07 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (9, 24) | embuscade creusée en (36, 20)",
+  "22/10 18:27 controle_ok",
+  "23/10 00:49 controle_ok",
+  "23/10 11:00 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E93 — LA GALERIE DES MÂCHOIRES",
+ "enrichi": true,
+ "empreinte": "4cc7159fe24308eb"
+}

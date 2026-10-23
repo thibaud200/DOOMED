@@ -1,0 +1,16 @@
+{
+ "numero": 75,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:24 carte_ok",
+  "22/10 12:43 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (13, 14) | embuscade creusée en (36, 4) | bonus K posé en (33, 7)",
+  "22/10 18:22 controle_ok",
+  "23/10 00:27 controle_ok",
+  "23/10 10:54 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E76 — LA CISTERNE DES BRUMES",
+ "enrichi": true,
+ "empreinte": "345968dc687d0335"
+}

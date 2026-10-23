@@ -1,0 +1,16 @@
+{
+ "numero": 77,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:30 carte_ok",
+  "22/10 12:46 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (31, 24) | embuscade creusée en (37, 8) | bonus I posé en (15, 12)",
+  "22/10 18:22 controle_ok",
+  "23/10 00:30 controle_ok",
+  "23/10 10:55 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E78 — LA CAVERNE HYDRO-THERMALE",
+ "enrichi": true,
+ "empreinte": "75abd9f0d40cb894"
+}

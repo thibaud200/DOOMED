@@ -1,0 +1,26 @@
+{
+ "numero": 18,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:25 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (21, 21) | bonus K posé en (10, 21) | soin ajouté en (26, 21) | soin ajouté en (20, 5)",
+  "22/10 17:57 controle_ok",
+  "22/10 18:25 carte_ok : retouche à la main (éditeur)",
+  "22/10 18:25 carte_ok : retouche à la main (éditeur)",
+  "22/10 18:25 carte_ok : retouche à la main (éditeur)",
+  "22/10 19:54 controle_ok",
+  "22/10 20:13 carte_ok : retouche à la main (éditeur)",
+  "22/10 20:51 carte_ok : à reconstruire : extérieur",
+  "22/10 21:03 controle_ok",
+  "22/10 21:32 carte_ok : à reconstruire : rochers et arbres aux textures du niveau",
+  "22/10 21:42 controle_ok",
+  "22/10 23:35 controle_ok",
+  "23/10 01:07 controle_ok",
+  "23/10 09:28 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E19 — LE LABYRINTHE DES FLAMMES ET",
+ "empreinte": "867604c4f0ad2d3c"
+}

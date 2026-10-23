@@ -1,0 +1,18 @@
+{
+ "numero": 30,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:07 echec : plan refusé après tous les essais",
+  "22/10 10:15 carte_ok",
+  "22/10 12:10 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — Opticien du vide présenté (3 remplacements) | 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (33, 11) | embuscade creusée en (22, 22) | bonus K posé en (35, 17)",
+  "22/10 18:04 controle_ok",
+  "22/10 23:43 controle_ok",
+  "23/10 09:37 controle_ok",
+  "23/10 10:14 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E31 — FORGE DES CENDRES",
+ "enrichi": true,
+ "empreinte": "6694ac58ebd0dafe"
+}

@@ -1,0 +1,25 @@
+{
+ "numero": 22,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:33 carte_ok",
+  "22/10 02:28 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:37 carte_ok : corrigée : 1. changer_case : fait | 2. poser : fait | 3. essayer : contrôle : aucune erreur",
+  "22/10 02:52 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:00 carte_ok : corrigée : 1. changer_case : fait | 2. essayer : contrôle : aucune erreur",
+  "22/10 03:10 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:42 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 07:56 controle_ok",
+  "22/10 13:05 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — Sentinelle de cuivre présenté (3 remplacements) | 2 monstre(s) de base remplacé(s) par des monstres créés | clé j en double retirée (5,22) | clé j en double retirée (30,2)",
+  "22/10 18:00 controle_ok",
+  "22/10 23:37 controle_ok",
+  "23/10 09:31 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E23 — MARAIS DE CENDRES",
+ "enrichi": true,
+ "empreinte": "7a2b65db92ebdd63"
+}

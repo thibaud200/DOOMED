@@ -1,0 +1,24 @@
+{
+ "numero": 10,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:23 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | monstre 5 (2,4) éloigné du départ → (2, 6)",
+  "22/10 17:44 controle_ok",
+  "22/10 20:51 carte_ok : à reconstruire : extérieur",
+  "22/10 20:57 controle_ok",
+  "22/10 21:17 carte_ok : extérieur meublé : 9 objets de décor posés dans les zones dégagées",
+  "22/10 21:22 controle_ok",
+  "22/10 21:32 carte_ok : à reconstruire : rochers et arbres aux textures du niveau",
+  "22/10 21:34 controle_ok",
+  "22/10 23:05 controle_ok",
+  "22/10 23:30 controle_ok",
+  "23/10 00:59 controle_ok",
+  "23/10 09:23 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E11 — LE RESEAU VEINEUX",
+ "empreinte": "e29ce34fe49a0254"
+}

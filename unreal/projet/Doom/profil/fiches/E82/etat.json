@@ -1,0 +1,16 @@
+{
+ "numero": 82,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:43 carte_ok",
+  "22/10 12:52 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 1 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (29, 13) | embuscade creusée en (32, 3) | soin ajouté en (36, 20)",
+  "22/10 18:24 controle_ok",
+  "23/10 00:35 controle_ok",
+  "23/10 10:56 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E83 — LE VENTRE DU RIFLEUR",
+ "enrichi": true,
+ "empreinte": "b93ae0ac153fe8bd"
+}

@@ -1,0 +1,17 @@
+{
+ "numero": 63,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:49 carte_ok",
+  "22/10 12:27 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (31, 18) | embuscade creusée en (5, 18) | bonus K posé en (28, 16)",
+  "22/10 18:17 controle_ok",
+  "23/10 00:14 controle_ok",
+  "23/10 09:58 controle_ok",
+  "23/10 10:42 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E64 — LE RÉACTEUR FISSURÉ",
+ "enrichi": true,
+ "empreinte": "e13f923500e4edb0"
+}

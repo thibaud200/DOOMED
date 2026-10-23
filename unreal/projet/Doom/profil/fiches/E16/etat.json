@@ -1,0 +1,32 @@
+{
+ "numero": 16,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:24 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | soin ajouté en (9, 13)",
+  "22/10 17:53 controle_ok",
+  "22/10 18:23 carte_ok : retouche à la main (éditeur)",
+  "22/10 18:23 carte_ok : retouche à la main (éditeur)",
+  "22/10 18:24 carte_ok : retouche à la main (éditeur)",
+  "22/10 18:24 carte_ok : retouche à la main (éditeur)",
+  "22/10 18:24 carte_ok : retouche à la main (éditeur)",
+  "22/10 18:24 carte_ok : retouche à la main (éditeur)",
+  "22/10 18:24 carte_ok : retouche à la main (éditeur)",
+  "22/10 19:53 controle_ok",
+  "22/10 20:51 carte_ok : à reconstruire : extérieur",
+  "22/10 21:03 controle_ok",
+  "22/10 21:17 carte_ok : extérieur meublé : 1 objets de décor posés dans les zones dégagées",
+  "22/10 21:28 controle_ok",
+  "22/10 21:32 carte_ok : à reconstruire : rochers et arbres aux textures du niveau",
+  "22/10 21:40 controle_ok",
+  "22/10 23:10 controle_ok",
+  "22/10 23:34 controle_ok",
+  "23/10 01:04 controle_ok",
+  "23/10 09:28 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E17 — FONDERIE DES ABYSSES",
+ "empreinte": "a5b36846b616b577"
+}

@@ -1,0 +1,35 @@
+{
+ "type": "fondeur",
+ "nom": "Fondu de cuivre",
+ "car": "d",
+ "resume": "Colosse en fusion qui crache d'énormes boules de métal incandescent depuis l'autre bout du couloir, lent mais quasi increvable.",
+ "description": "Massive silhouette humanoïde recouverte de plaques de cuivre fondu et de scories noires, bras disproportionnés terminés par une gueule de four à fusion qui pulvérise le métal en boules incandescentes lentes ; yeux creux remplis d'orange.",
+ "prompt_image": "massive humanoid colossus covered in molten copper plates and black slag, oversized arm ending in a furnace maw spewing slow glowing metal orbs, hollow orange eyes, full body, single creature, plain dark background, gritty sci-fi horror style",
+ "intro": 57,
+ "stats": {
+  "hp": 280,
+  "speed": 1.1,
+  "melee": 30,
+  "r": 0.45,
+  "fly": 0
+ },
+ "attaque": {
+  "mode": "boule",
+  "couleur": "fire",
+  "portee": [
+   6,
+   15
+  ],
+  "recharge": [
+   3,
+   4.5
+  ],
+  "degats": [
+   25,
+   40
+  ],
+  "vitesse": 8
+ },
+ "role": "artilleur",
+ "special": "aucun"
+}

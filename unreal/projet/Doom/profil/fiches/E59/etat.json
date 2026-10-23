@@ -1,0 +1,17 @@
+{
+ "numero": 59,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:39 carte_ok",
+  "22/10 12:22 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (27, 24) | embuscade creusée en (16, 19)",
+  "22/10 18:16 controle_ok",
+  "23/10 00:09 controle_ok",
+  "23/10 09:57 controle_ok",
+  "23/10 10:36 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E60 — VENTRE DU RIFLEUR",
+ "enrichi": true,
+ "empreinte": "f371957c573d309e"
+}

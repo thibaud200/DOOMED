@@ -1,0 +1,16 @@
+{
+ "numero": 80,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:38 carte_ok",
+  "22/10 12:50 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (9, 10) | embuscade creusée en (20, 8)",
+  "22/10 18:23 controle_ok",
+  "23/10 00:34 controle_ok",
+  "23/10 10:56 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E81 — LE DOME BRÛLANT",
+ "enrichi": true,
+ "empreinte": "22b1045415c3bb1c"
+}

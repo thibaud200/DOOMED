@@ -1,0 +1,28 @@
+{
+ "numero": 50,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 02:27 carte_ok",
+  "22/10 02:35 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:51 carte_ok : corrigée : 1. changer_case : fait | 2. poser : fait | 3. essayer : contrôle : aucune erreur",
+  "22/10 02:58 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:09 carte_ok : corrigée : 1. deplacer : fait | 2. poser : fait",
+  "22/10 03:15 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:51 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:30 controle_ok",
+  "22/10 13:07 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (33, 11) | embuscade creusée en (34, 2) | clé b en double retirée (20,1) | clé b en double retirée (22,1) | soin ajouté en (34, 4)",
+  "22/10 18:13 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:45 controle_ok",
+  "22/10 23:57 controle_ok",
+  "23/10 09:55 controle_ok",
+  "23/10 10:23 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E51 — SANCTUAIRE D'IVOIRE",
+ "enrichi": true,
+ "empreinte": "deb6af9021e11b6f"
+}

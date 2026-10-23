@@ -1,0 +1,18 @@
+{
+ "numero": 72,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:15 carte_ok",
+  "22/10 12:39 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (35, 6) | embuscade creusée en (15, 8) | bonus K posé en (17, 5) | soin ajouté en (9, 22)",
+  "22/10 18:21 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:48 controle_ok",
+  "23/10 00:24 controle_ok",
+  "23/10 10:53 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E73 — LE DÉFILÉ DES CENDRES",
+ "enrichi": true,
+ "empreinte": "ba9a661a0d3d718c"
+}

@@ -1,0 +1,24 @@
+{
+ "numero": 5,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:22 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — Goule des conduits présenté (3 remplacements) | 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (33, 4) | bonus I posé en (12, 15) | soin ajouté en (16, 15) | soin ajouté en (6, 17) | soin ajouté en (17, 11)",
+  "22/10 17:37 controle_ok",
+  "22/10 20:51 carte_ok : à reconstruire : extérieur",
+  "22/10 20:53 controle_ok",
+  "22/10 21:17 carte_ok : extérieur meublé : 9 objets de décor posés dans les zones dégagées",
+  "22/10 21:19 controle_ok",
+  "22/10 21:32 carte_ok : à reconstruire : rochers et arbres aux textures du niveau",
+  "22/10 21:32 controle_ok",
+  "22/10 23:00 controle_ok",
+  "22/10 23:26 controle_ok",
+  "23/10 00:54 controle_ok",
+  "23/10 09:20 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E6 — L’ÉCHO DE CENDRE",
+ "empreinte": "0061e7bf751c8b06"
+}

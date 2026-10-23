@@ -1,0 +1,29 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "carte",
+ "title": "Carte d'un niveau en grille",
+ "description": "Deuxième fiche : la grille complète, dessinée en suivant le plan général. Les caractères et les règles viennent du profil du jeu (carte.legende, carte.regles). C'est le format que construit l'outil (construire.py).",
+ "type": "object",
+ "required": ["niveau", "nom", "rows"],
+ "additionalProperties": false,
+ "properties": {
+  "niveau": {"type": "integer", "minimum": 1},
+  "nom": {"type": "string"},
+  "style": {"type": "string"},
+  "sky": {"type": "boolean", "default": false},
+  "angle": {"type": "number", "default": 0, "description": "direction du regard au départ, en radians (0 = vers la droite de la carte)"},
+  "rows": {
+   "type": "array", "minItems": 20, "maxItems": 30,
+   "items": {"type": "string", "minLength": 20, "maxLength": 42},
+   "description": "lignes de la grille, de haut en bas ; toutes de même longueur ; uniquement des caractères de la légende du profil"
+  },
+  "light": {
+   "type": "array", "items": {"type": "string", "pattern": "^[0-9f]+$"},
+   "description": "optionnel : même taille que rows ; 0-9 intensité, f clignote"
+  },
+  "zones": {
+   "type": "object", "additionalProperties": {"type": "array", "items": {"type": "integer"}, "minItems": 4, "maxItems": 4},
+   "description": "optionnel mais conseillé : id de zone du plan → [x, y, largeur, hauteur] du rectangle qu'elle occupe ; sert à vérifier que la carte respecte le plan"
+  }
+ }
+}

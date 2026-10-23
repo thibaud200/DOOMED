@@ -1,0 +1,21 @@
+{
+ "numero": 44,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 02:07 carte_ok",
+  "22/10 02:34 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:48 echec : correction impossible",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:49 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:22 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | clé j en double retirée (39,15)",
+  "22/10 18:11 controle_ok",
+  "22/10 23:52 controle_ok",
+  "23/10 09:51 controle_ok"
+ ],
+ "corrections": 1,
+ "suivant": "E45 — FOND DE PUIT",
+ "enrichi": true,
+ "empreinte": "9e7ac449ffd6e87a"
+}

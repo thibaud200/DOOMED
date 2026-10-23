@@ -1,0 +1,16 @@
+{
+ "numero": 76,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:27 carte_ok",
+  "22/10 12:44 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 2 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (34, 15) | embuscade creusée en (6, 14)",
+  "22/10 18:22 controle_ok",
+  "23/10 00:28 controle_ok",
+  "23/10 10:55 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E77 — LE SANCTUAIRE DE SEL",
+ "enrichi": true,
+ "empreinte": "f2e0aeb582455029"
+}

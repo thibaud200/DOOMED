@@ -1,0 +1,26 @@
+{
+ "numero": 8,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:22 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | mur secret (21,7) sans réduit : remplacé par un mur | mur secret (26,8) sans réduit : remplacé par un mur | mur secret (27,13) sans réduit : remplacé par un mur | mur secret (20,19) sans réduit : remplacé par un mur | mur secret (21,19) sans ",
+  "22/10 17:42 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:11 controle_ok",
+  "22/10 20:51 carte_ok : à reconstruire : extérieur",
+  "22/10 20:57 controle_ok",
+  "22/10 21:17 carte_ok : extérieur meublé : 14 objets de décor posés dans les zones dégagées",
+  "22/10 21:21 controle_ok",
+  "22/10 21:32 carte_ok : à reconstruire : rochers et arbres aux textures du niveau",
+  "22/10 21:34 controle_ok",
+  "22/10 23:03 controle_ok",
+  "22/10 23:28 controle_ok",
+  "23/10 00:57 controle_ok",
+  "23/10 09:22 controle_ok"
+ ],
+ "corrections": 0,
+ "source": "jeu HTML (enrichi)",
+ "enrichi": true,
+ "suivant": "E9 — LE SANCTUAIRE DE VERRE",
+ "empreinte": "59cf9a0b040c2814"
+}

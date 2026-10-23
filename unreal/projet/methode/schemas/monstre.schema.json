@@ -1,0 +1,172 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "monstre",
+ "title": "Fiche d'un monstre",
+ "description": "Un monstre = des réglages du gabarit du profil (gabarits.monstre) + une description pour l'image. Le modèle choisit un comportement d'attaque existant ; il n'invente pas de logique. Bornes des valeurs : gabarits.monstre.bornes du profil.",
+ "type": "object",
+ "required": [
+  "type",
+  "nom",
+  "car",
+  "resume",
+  "description",
+  "prompt_image",
+  "intro",
+  "stats",
+  "attaque",
+  "role",
+  "special"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "type": {
+   "type": "string",
+   "pattern": "^[a-z][a-z0-9]{2,15}$",
+   "description": "identifiant technique, en minuscules"
+  },
+  "nom": {
+   "type": "string",
+   "maxLength": 30
+  },
+  "car": {
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 1,
+   "description": "caractère de carte, non utilisé par la légende du profil"
+  },
+  "resume": {
+   "type": "string",
+   "maxLength": 200,
+   "description": "rôle en jeu en une phrase"
+  },
+  "description": {
+   "type": "string",
+   "maxLength": 500,
+   "description": "apparence en français"
+  },
+  "prompt_image": {
+   "type": "string",
+   "maxLength": 500,
+   "description": "apparence EN ANGLAIS pour ComfyUI (corps entier, une seule créature, pas de décor)"
+  },
+  "intro": {
+   "type": "integer",
+   "minimum": 1,
+   "description": "niveau où il apparaît pour la première fois"
+  },
+  "stats": {
+   "type": "object",
+   "required": [
+    "hp",
+    "speed",
+    "melee",
+    "r"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "hp": {
+     "type": "number"
+    },
+    "speed": {
+     "type": "number",
+     "description": "cases par seconde"
+    },
+    "melee": {
+     "type": "number",
+     "description": "dégâts au contact (0 = aucun)"
+    },
+    "r": {
+     "type": "number",
+     "description": "rayon en cases"
+    },
+    "fly": {
+     "type": "number",
+     "default": 0,
+     "description": "hauteur de vol en cases (0 = marche)"
+    }
+   }
+  },
+  "attaque": {
+   "type": "object",
+   "required": [
+    "mode"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "mode": {
+     "enum": [
+      "aucun",
+      "boule",
+      "balle",
+      "charge"
+     ]
+    },
+    "couleur": {
+     "enum": [
+      "fire",
+      "blue",
+      "green"
+     ],
+     "description": "mode boule seulement"
+    },
+    "portee": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 2,
+     "maxItems": 2,
+     "description": "[min, max] en cases"
+    },
+    "recharge": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 2,
+     "maxItems": 2,
+     "description": "[min, max] en secondes"
+    },
+    "degats": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 2,
+     "maxItems": 2,
+     "description": "[min, max]"
+    },
+    "vitesse": {
+     "type": "number",
+     "description": "boule ou charge : cases par seconde"
+    }
+   }
+  },
+  "lache": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "description": "objet laissé à la mort (type d'objet du profil), ou null"
+  },
+  "role": {
+   "type": "string",
+   "description": "un rôle de gabarits.monstre.roles du profil ; les chiffres restent dans ses fourchettes"
+  },
+  "special": {
+   "enum": [
+    "aucun",
+    "explose",
+    "regenere",
+    "rafale"
+   ],
+   "default": "aucun",
+   "description": "comportement spécial (gabarits.monstre.speciaux)"
+  },
+  "puissance": {
+   "type": "number",
+   "default": 0,
+   "description": "explose : dégâts (10-60) ; regenere : PV par seconde (2-15) ; sinon 0"
+  }
+ }
+}

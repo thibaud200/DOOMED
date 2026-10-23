@@ -1,0 +1,17 @@
+{
+ "numero": 65,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 10:55 carte_ok",
+  "22/10 12:30 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 4 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (14, 15) | embuscade creusée en (28, 19) | bonus I posé en (39, 21)",
+  "22/10 18:18 controle_ok",
+  "23/10 00:17 controle_ok",
+  "23/10 09:59 controle_ok",
+  "23/10 10:45 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E66 — LA CISTERNE SANGUINE",
+ "enrichi": true,
+ "empreinte": "e1f8d813aefbad98"
+}

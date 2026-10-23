@@ -1,0 +1,37 @@
+{
+ "type": "briseur",
+ "nom": "Briseur de verrous",
+ "car": "q",
+ "resume": "Gardien lourd et lent des couloirs : il se fige comme un mur, puis frappe d'un coup de poing dévastateur quand le joueur s'arrête devant lui.",
+ "description": "Colosse massif couvert de plaques de métal fondu qui scellent sa peau. Ses bras sont deux pilons massifs reliés à des pistons hydrauliques. Il ne marche presque pas, mais chaque pas fait trembler le sol. Quand il frappe, l'onde de choc fissure les murs.",
+ "prompt_image": "massive hulking creature encased in melted metal plates and hydraulic piston arms, full body, single creature standing still, plain dark background, gritty retro sci-fi horror style",
+ "intro": 48,
+ "stats": {
+  "hp": 350,
+  "speed": 1.2,
+  "melee": 35,
+  "r": 0.4,
+  "fly": 0
+ },
+ "attaque": {
+  "mode": "boule",
+  "couleur": "fire",
+  "portee": [
+   3,
+   8
+  ],
+  "recharge": [
+   2.5,
+   4
+  ],
+  "degats": [
+   15,
+   25
+  ],
+  "vitesse": 7
+ },
+ "lache": null,
+ "role": "tank",
+ "special": "aucun",
+ "puissance": 0
+}

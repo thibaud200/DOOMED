@@ -1,0 +1,26 @@
+{
+ "numero": 41,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 01:56 carte_ok",
+  "22/10 02:33 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:46 carte_ok : corrigée : 1. essayer : contrôle : aucune erreur",
+  "22/10 02:56 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 03:06 carte_ok : corrigée : 2. essayer : contrôle : aucune erreur",
+  "22/10 03:13 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:48 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 08:17 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 4 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (37, 12) | embuscade creusée en (37, 20) | bonus I posé en (13, 1)",
+  "22/10 18:09 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:36 controle_ok",
+  "22/10 23:50 controle_ok",
+  "23/10 09:48 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E42 — CATHÉDRALE FONDUE",
+ "enrichi": true,
+ "empreinte": "c05a28acef839bd0"
+}

@@ -1,0 +1,16 @@
+{
+ "numero": 85,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 11:51 carte_ok",
+  "22/10 12:56 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 1 monstre(s) de base remplacé(s) par des monstres créés | embuscade creusée en (2, 16) | embuscade creusée en (29, 9) | bonus I posé en (8, 16)",
+  "22/10 18:25 controle_ok",
+  "23/10 00:40 controle_ok",
+  "23/10 10:58 controle_ok"
+ ],
+ "corrections": 0,
+ "suivant": "E86 — LE PHARE NOYÉ",
+ "enrichi": true,
+ "empreinte": "b5b03e8e8bd34380"
+}

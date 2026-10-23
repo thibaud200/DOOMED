@@ -1,0 +1,25 @@
+{
+ "numero": 21,
+ "statut": "controle_ok",
+ "historique": [
+  "22/10 00:30 carte_ok",
+  "22/10 02:28 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:36 carte_ok : corrigée : 1. changer_case : fait | 2. essayer : contrôle : porte (6,2) mal encadrée : il faut un mur de chaque côté et du sol devant et derrière | porte mal encadrée (6,2) remplacée par du sol",
+  "22/10 02:52 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 02:59 echec : correction impossible",
+  "22/10 07:41 carte_ok : remis en file : contrôle de navigation corrigé (maillage STATIC)",
+  "22/10 07:42 controle_ko : le départ n'est pas sur le maillage de navigation (navigation non calculée ?)",
+  "22/10 07:54 carte_ok : remis en file : attente réelle de la navigation",
+  "22/10 07:55 controle_ok",
+  "22/10 17:31 carte_ok : enrichi — 3 monstre(s) de base remplacé(s) par des monstres créés | bonus K posé en (36, 2) | bonus I posé en (38, 8)",
+  "22/10 18:00 controle_ok",
+  "22/10 20:10 carte_ok : à reconstruire : lave",
+  "22/10 20:19 controle_ok",
+  "22/10 23:36 controle_ok",
+  "23/10 09:31 controle_ok"
+ ],
+ "corrections": 2,
+ "suivant": "E22 — CATHÉDRALE DES OS",
+ "enrichi": true,
+ "empreinte": "640419e62e0e3a0e"
+}
