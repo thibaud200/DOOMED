@@ -1,0 +1,2 @@
+unreal/Doom/Binaries/Win64/*.exe filter=lfs diff=lfs merge=lfs -text
+unreal/Doom/Content/Paks/*.ucas filter=lfs diff=lfs merge=lfs -text

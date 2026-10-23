@@ -1,0 +1,16 @@
+Doom/Binaries/Win64/D3D12/x64/D3D12Core.dll	2026-10-20T19:25:44.645Z
+Doom/Binaries/Win64/D3D12/x64/d3d12SDKLayers.dll	2026-10-20T19:25:44.648Z
+Doom/Binaries/Win64/Doom-Win64-Shipping.exe	2026-10-23T00:04:55.085Z
+Doom/Binaries/Win64/tbb12.dll	2026-10-20T19:25:43.979Z
+Doom/Binaries/Win64/tbbmalloc.dll	2026-10-20T19:25:43.980Z
+Engine/Binaries/ThirdParty/DbgHelp/dbghelp.dll	2026-10-20T19:24:43.087Z
+Engine/Binaries/ThirdParty/NVIDIA/NVaftermath/Win64/GFSDK_Aftermath_Lib.x64.dll	2026-10-20T19:24:46.824Z
+Engine/Binaries/ThirdParty/Ogg/Win64/VS2015/libogg_64.dll	2026-10-20T19:24:46.838Z
+Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbis_64.dll	2026-10-20T19:24:47.302Z
+Engine/Binaries/ThirdParty/Vorbis/Win64/VS2015/libvorbisfile_64.dll	2026-10-20T19:24:47.303Z
+Engine/Binaries/ThirdParty/Windows/XAudio2_9/x64/xaudio2_9redist.dll	2026-10-20T19:24:47.347Z
+Engine/Content/Renderer/TessellationTable.bin	2026-10-18T08:12:34.137Z
+Engine/Content/Slate/Cursor/invisible.cur	2026-10-18T08:12:34.196Z
+Engine/Config/StagedBuild_Doom.ini	2026-10-23T09:02:31.418Z
+Doom.exe	2026-10-23T09:02:31.406Z
+NOTICES.txt	2026-10-18T08:14:33.472Z
