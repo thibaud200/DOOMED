@@ -62,7 +62,7 @@ function grit(x, w, h, n, dark, light) {
 }
 
 const TX = {};
-const WALL_TEX = [];   // indexé par code de case (1 brique, 2 tech, 3 porte, 4 sortie)
+const WALL_TEX = [];   // indexé par code de case (1 brique, 2 tech, 3 porte, 4 sortie, 5-6 interrupteur, 7 barrière)
 
 /* monstres créés par le modèle (outils/ia_tache.py monstre) : [type, nom de sa fonction de dessin] */
 const MONSTRES_GENERES = [
@@ -508,6 +508,7 @@ function buildWalls() {
   TX.floor = texFromCanvas(floor); TX.ceil = texFromCanvas(ceil);
   
   WALL_TEX[1] = TX.brick; WALL_TEX[2] = TX.tech; WALL_TEX[3] = TX.door; WALL_TEX[4] = TX.exit;
+  WALL_TEX[5] = WALL_TEX[6] = TX.tech; WALL_TEX[7] = TX.brick;   // interrupteurs et barrière, sans les images Freedoom
   appliquerImagesIA();
 }
 
@@ -2068,11 +2069,13 @@ function appliquerImagesFreedoom() {
   for (const n of Object.keys(IMAGES_FREEDOOM)) {
     const t = imageIA(n);
     if (!t) continue;
-    if (n.startsWith('wp')) { if (TX[n]) TX[n] = t.cv; }   // armes en main : seulement une fois dessinées (buildWeapons)
+    if (n.startsWith('wp')) TX[n] = t.cv;   // armes en main (canvas) ; tronçonneuse, plasma, BFG : seulement Freedoom
     else if (n === 'sky') TX.sky = t;   // ciel : toute taille (le rendu lit sa largeur et sa hauteur)
-    else if (TX[n] && TX[n].w === t.w && TX[n].h === t.h) TX[n] = t;
+    else if (!TX[n] || (TX[n].w === t.w && TX[n].h === t.h)) TX[n] = t;   // nouveau (bestiaire, objets des lots 4-6) ou même taille
   }
   WALL_TEX[1] = TX.brick; WALL_TEX[2] = TX.tech; WALL_TEX[3] = TX.door; WALL_TEX[4] = TX.exit;
+  for (const pose of ['A', 'B', 'Atk', 'Pain', 'Corpse']) if (!TX['spectre' + pose]) TX['spectre' + pose] = TX['pinky' + pose];   // spectre : pinky flou
+  WALL_TEX[5] = TX.switchOff || TX.tech; WALL_TEX[6] = TX.switchOn || TX.tech; WALL_TEX[7] = TX.barrier || TX.brick;   // interrupteurs, barrière
 }
 /* ---------- F2 : planche de tous les assets ---------- */
 const ASSET_LIST = ['brick', 'tech', 'door', 'exit', 'floor', 'ceil', 'fireball', 'puff',

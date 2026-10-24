@@ -19,7 +19,12 @@ const ED_COULEURS = {
   'R': '#e02020', 'B': '#2050f0', 'J': '#e0c010', 'r': '#ff6060', 'b': '#6090ff', 'j': '#ffe060', '~': '#ff6a10',
   'K': '#b01818', 'I': '#4070ff', 'M': '#d0d8e0', 'G': '#8a5a2a',
   '1': '#c03020', '2': '#e080a0', '3': '#d02020', '4': '#6a7a50', '5': '#ff8020', '6': '#d9a58a',
-  'H': '#f0f0f0', 'A': '#c09040', 'S': '#806040', 'V': '#30a040', 'C': '#666a70', 'L': '#4a5a3a', 'm': '#d9b658', 'k': '#cc3333', '@': '#c181ca', '&': '#5fe1c0' };
+  'H': '#f0f0f0', 'A': '#c09040', 'S': '#806040', 'V': '#30a040', 'C': '#666a70', 'L': '#4a5a3a', 'm': '#d9b658', 'k': '#cc3333', '@': '#c181ca', '&': '#5fe1c0',
+  '7': '#5a6a40', '8': '#7a3030', '9': '#b8a080', '0': '#e8e0d0', 'N': '#c09060', 'Y': '#a0a0a0', 'W': '#a06040', 'X': '#704030',
+  'Q': '#909090', 'Z': '#e0c0a0', 'O': '#704050',
+  'h': '#f8f8f8', '+': '#60a0ff', '*': '#60d060', 'v': '#3060e0', 's': '#4080ff', 'i': '#30d030', 'u': '#40c040', 'c': '#40e040',
+  'g': '#c0c0c0', 'a': '#d9b658', 'e': '#c09040', 'x': '#cc3333', 'n': '#60c0ff', 'p': '#4090e0', 'w': '#c0c0c0', 'z': '#4060ff', 'y': '#40ff40',
+  'T': '#ff3030', 'd': '#ff9090', 'U': '#40a0a0', '!': '#606870', '_': '#30c030' };
 
 /* nom affiché dans la palette ; seuls les caractères présents dans LEGEND sont proposés */
 const ED_NOMS = {
@@ -28,7 +33,13 @@ const ED_NOMS = {
   'K': 'Berserk', 'I': 'Invisibilité', 'M': 'Mégasphère', 'G': 'Sac à dos',
   '1': 'Diablotin', '2': 'Démon rose', '3': 'Cacodémon', '4': 'Soldat', '5': 'Âme perdue', '6': 'Baron',
   'H': 'Trousse', 'A': 'Cartouches', 'S': 'Fusil', 'V': 'Armure', 'C': 'Mitrailleuse', 'L': 'Lance-roquettes',
-  'm': 'Balles', 'k': 'Roquettes', '@': 'Sporeling', '&': 'Vulturion des Cendres' };
+  'm': 'Balles', 'k': 'Roquettes', '@': 'Sporeling', '&': 'Vulturion des Cendres',
+  '7': 'Sergent', '8': 'Commando', '9': 'Chevalier de l\'Enfer', '0': 'Revenant', 'N': 'Mancubus', 'Y': 'Arachnotron',
+  'W': 'Élémentaire de douleur', 'X': 'Cyberdémon', 'Q': 'Araignée cervelle', 'Z': 'Archi-infâme', 'O': 'Spectre',
+  'h': 'Stimulant', '+': 'Bonus de santé', '*': 'Bonus d\'armure', 'v': 'Méga-armure', 's': 'Sphère d\'âme', 'i': 'Invulnérabilité',
+  'u': 'Combinaison', 'c': 'Carte informatique', 'g': 'Lunettes', 'a': 'Boîte de balles', 'e': 'Boîte de cartouches',
+  'x': 'Caisse de roquettes', 'n': 'Cellules', 'p': 'Pack de cellules', 'w': 'Tronçonneuse', 'z': 'Fusil à plasma', 'y': 'BFG 9000',
+  'T': 'Téléporteur', 'd': 'Arrivée', 'U': 'Interrupteur', '!': 'Barrière', '_': 'Nukage' };
 
 function dessinerGrille() {
   if (!ED.canvas || !ED.rows) return;

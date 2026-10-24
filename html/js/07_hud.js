@@ -2,8 +2,9 @@
 /* DOOMED — 07_hud.js : arme, HUD, visage, minimap, écrans titre / pause / mort / fin
  *
  * CONTRAT (vérifié par test.html — ne rien retirer de cette liste) :
- *   FOURNIT : gameDraw hudBg panel startMelt fmtTime drawWeapon drawHUD drawFace drawMinimap drawTitle drawVictory
- *   UTILISE : 01, TX grit (02), MAPS loadLevel CELL_* (04), render3D (05), G collectSprites (06)
+ *   FOURNIT : gameDraw doom fondTitre hudBg panel startMelt fmtTime drawWeapon drawHUD drawFace drawMinimap drawTitle drawVictory
+ *   UTILISE : 01, TX grit (02), MAPS loadLevel CELL_* (04), render3D (05), G collectSprites (06),
+ *             interfaceDoomPrete barreDoom carteAuto texteDoom ecranStats ecranFin (07b), G.menu dessinerMenu (07c) — facultatifs
  *   RÈGLE : tout texte doit tenir dans l'écran 480×320 ; le HUD dans sa barre de 48 px (y de 272 à 320).
  */
 
@@ -24,11 +25,14 @@ function hudBg() {
 }
 
 function gameDraw() {
-  if (G.state === 'title') return drawTitle();
-  if (G.state === 'victory') return drawVictory();
+  if (G.state === 'title') { if (doom() && G.menu) { fondTitre(); return dessinerMenu(); } return drawTitle(); }
+  if (G.state === 'victory') return doom() ? ecranFin() : drawVictory();
+  if (G.state === 'clear' && doom() && !G.melt) return ecranStats();
   const P = G.P;
   const view = G.state === 'dead' ? { x: P.x, y: P.y, a: P.a, z: Math.max(0.1, 0.5 - G.stateT * 0.4) } : P;
+  VISION_NOCTURNE = P.lunettesT > 0 && (P.lunettesT > 4 || (P.lunettesT * 4 | 0) % 2 === 0);   // clignote avant la fin
   render3D(view, G.L, collectSprites());
+  VISION_NOCTURNE = false;
   ctx.putImageData(FB_IMG, 0, 0);
   drawWeapon();   // dessine aussi le flash, derrière l'arme
   if (G.state === 'play') {
@@ -38,11 +42,18 @@ function gameDraw() {
   }
   if (P.hurt > 0) { ctx.fillStyle = `rgba(200,0,0,${Math.min(0.45, P.hurt * 0.8)})`; ctx.fillRect(0, 0, W, PLAY_H); }
   if (G.pickFlash > 0) { ctx.fillStyle = `rgba(255,230,120,${G.pickFlash})`; ctx.fillRect(0, 0, W, PLAY_H); }
-  drawHUD();
-  if (G.minimap) drawMinimap();
-  if (G.msgT > 0) text(G.msg, 6, 10, 10, '#ffd040');
+  if (P.invulT > 0 && (P.invulT > 4 || (P.invulT * 4 | 0) % 2 === 0)) {   // invulnérable : couleurs inversées, comme Doom
+    ctx.save(); ctx.globalCompositeOperation = 'difference'; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, PLAY_H); ctx.restore();
+  } else if (P.combiT > 0 && (P.combiT > 4 || (P.combiT * 4 | 0) % 2 === 0)) { ctx.fillStyle = 'rgba(40,255,40,.14)'; ctx.fillRect(0, 0, W, PLAY_H); }
+  if (doom()) barreDoom(); else drawHUD();
+  if (G.automap && G.state !== 'title') carteAuto();
+  else if (G.minimap) drawMinimap();
+  if (G.msgT > 0) { if (doom()) texteDoom(G.msg, 4, 4, ECH); else text(G.msg, 6, 10, 10, '#ffd040'); }
 
-  if (G.state === 'pause') {
+  if (G.state === 'pause' && doom()) {
+    if (G.menu) dessinerMenu();
+    else { ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 0, W, PLAY_H); texteDoom('Pause', W / 2, HOR - 20, ECH * 2.5, 'center'); }
+  } else if (G.state === 'pause') {
     ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, 0, W, PLAY_H);
     text('PAUSE', W / 2, HOR - 10, 26, '#e33', 'center');
     text('Entrée, P ou clic pour reprendre', W / 2, HOR + 18, 10, '#ccc', 'center');
@@ -71,6 +82,9 @@ function gameDraw() {
   }
 }
 
+/* interface et menus à la Doom (07b, 07c) si leurs images sont chargées, sauf réglage « barre classique » */
+const doom = () => typeof interfaceDoomPrete === 'function' && interfaceDoomPrete() && !SETTINGS.hudClassique && !G.classique;   // G.classique : tests de l'interface d'origine
+
 const fmtTime = t => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
 
 function panel(lines) {
@@ -93,12 +107,13 @@ function startMelt() {
 /* ---------- arme en vue subjective ---------- */
 function drawWeapon() {
   const P = G.P;
-  const imgs = [TX.wpPistol, TX.wpShotgun, TX.wpFist, TX.wpChaingun, TX.wpRocket];
-  const img = imgs[P.weapon] || TX.wpPistol;
+  const imgs = [TX.wpPistol, TX.wpShotgun, TX.wpFist, TX.wpChaingun, TX.wpRocket,
+    P.scieT > 0 ? TX.wpChainsaw2 : TX.wpChainsaw, P.flash > 0 ? TX.wpPlasmaFlash : TX.wpPlasma, P.bfgT > 0 || P.flash > 0 ? TX.wpBfgFlash : TX.wpBfg];
+  const img = imgs[P.weapon] || TX.wpPistol, propreFlash = P.weapon >= 5;   // tronçonneuse, plasma, BFG : image de tir à part
   const bx = Math.cos(P.bob) * 7 * P.moving, by = Math.abs(Math.sin(P.bob)) * 6 * P.moving;
   const drop = G.state === 'dead' ? Math.min(60, G.stateT * 80) : 0;
   const x = Math.round((W - img.width) / 2 + bx), y = Math.round(PLAY_H - img.height + by + P.kick * (P.weapon === 1 ? 14 : 8) + drop);
-  if (P.flash > 0 && P.weapon !== 2) { const f = TX.wpFlash; ctx.drawImage(f, x + (img.width - f.width) / 2, y - f.height + 14); }
+  if (P.flash > 0 && P.weapon !== 2 && !propreFlash) { const f = TX.wpFlash; ctx.drawImage(f, x + (img.width - f.width) / 2, y - f.height + 14); }
   ctx.drawImage(img, x, y);
 }
 
@@ -279,7 +294,7 @@ function drawMinimap() {
 
 /* ---------- écran titre : le hangar tourne en fond ---------- */
 let TITLE_L = null;
-function drawTitle() {
+function fondTitre() {   // le hangar qui tourne et le logo (écran titre, menus de Doom)
   if (!TITLE_L) TITLE_L = loadLevel(0);
   render3D({ x: 15.5, y: 4.5, a: performance.now() / 7000 }, TITLE_L, []);
   ctx.putImageData(FB_IMG, 0, 0);
@@ -291,6 +306,9 @@ function drawTitle() {
   ctx.lineWidth = 4; ctx.strokeStyle = '#000'; ctx.strokeText('DOOMED', W / 2, 72);
   ctx.fillStyle = g; ctx.fillText('DOOMED', W / 2, 72);
   text('hommage à Doom (1993)', W / 2, 112, 10, '#bbb', 'center');
+}
+function drawTitle() {
+  fondTitre();
 
   const diffNames = ['Facile', 'Normal', 'Difficile'];
   let curIdx = G.skill === undefined ? 1 : G.skill; if (curIdx < 0 || curIdx > 2) curIdx = 1;   // G.skill : la difficulté réellement utilisée

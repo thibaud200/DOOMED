@@ -2,17 +2,26 @@
 /* DOOMED — 04_maps.js : cartes, légende, validateur, chargement d'un niveau
  *
  * CONTRAT (vérifié par test.html — ne rien retirer de cette liste) :
- *   FOURNIT : CELL_EMPTY CELL_BRICK CELL_TECH CELL_DOOR CELL_EXIT · LEGEND SPAWN ITEM MAPS CLE_NIVEAUX CLE_TEST · validateMap loadLevel lireNiveauxPerso ecrireNiveauxPerso lireNiveauTest ecrireNiveauTest
+ *   FOURNIT : CELL_EMPTY CELL_BRICK CELL_TECH CELL_DOOR CELL_EXIT CELL_SWITCH CELL_SWITCH_ON CELL_BARRIER · LEGEND SPAWN ITEM MAPS CLE_NIVEAUX CLE_TEST · validateMap loadLevel lireNiveauxPerso ecrireNiveauxPerso lireNiveauTest ecrireNiveauTest
  *             loadLevel(i) -> { name, w, h, grid: Uint8Array, doorAt: Int16Array, doors[], enemies[], items[], start{x,y,a} }
  *   RÈGLE : toute carte doit passer validateMap ET avoir une sortie atteignable depuis P (test.html le vérifie).
  */
 
 const CELL_EMPTY = 0, CELL_BRICK = 1, CELL_TECH = 2, CELL_DOOR = 3, CELL_EXIT = 4;
+const CELL_SWITCH = 5, CELL_SWITCH_ON = 6, CELL_BARRIER = 7;   // interrupteur (E l'actionne : les barrières du niveau s'ouvrent)
 
 /* Légende : caractère -> code de case (0 = sol praticable) */
-const LEGEND = { '#': 1, '%': 2, '=': 3, 'E': 4, '.': 0, 'P': 0, '1': 0, '2': 0, 'H': 0, 'A': 0, 'S': 0, '$': 1, 'V': 0, '3': 0, '4': 0, '5': 0, '6': 0, 'C': 0, 'L': 0, 'm': 0, 'k': 0, 'R': 3, 'B': 3, 'J': 3, 'r': 0, 'b': 0, 'j': 0, '~': 0, 'K': 0, 'I': 0, 'M': 0, 'G': 0, '@': 0, '&': 0 };
-const SPAWN = { '1': 'imp', '2': 'pinky', '3': 'caco', '4': 'soldier', '5': 'lostsoul', '6': 'baron', '@': 'sporeling', '&': 'vulture' };
-const ITEM = { 'H': 'medkit', 'A': 'ammo', 'S': 'shotgun', 'V': 'armor', 'C': 'chaingun', 'L': 'launcher', 'm': 'bullets', 'k': 'rockets', 'r': 'keyRed', 'b': 'keyBlue', 'j': 'keyYellow', 'K': 'berserk', 'I': 'invis', 'M': 'mega', 'G': 'backpack' };
+const LEGEND = { '#': 1, '%': 2, '=': 3, 'E': 4, '.': 0, 'P': 0, '1': 0, '2': 0, 'H': 0, 'A': 0, 'S': 0, '$': 1, 'V': 0, '3': 0, '4': 0, '5': 0, '6': 0, 'C': 0, 'L': 0, 'm': 0, 'k': 0, 'R': 3, 'B': 3, 'J': 3, 'r': 0, 'b': 0, 'j': 0, '~': 0, 'K': 0, 'I': 0, 'M': 0, 'G': 0, '@': 0, '&': 0,
+  // lots 4 à 6 : bestiaire de Doom II, objets, armes, téléporteurs (T départ → d arrivée), interrupteur U et barrières !, nukage _
+  '7': 0, '8': 0, '9': 0, '0': 0, 'N': 0, 'Y': 0, 'W': 0, 'X': 0, 'Q': 0, 'Z': 0, 'O': 0,
+  'h': 0, '+': 0, '*': 0, 'v': 0, 's': 0, 'i': 0, 'u': 0, 'c': 0, 'g': 0, 'a': 0, 'e': 0, 'x': 0, 'n': 0, 'p': 0,
+  'w': 0, 'z': 0, 'y': 0, 'T': 0, 'd': 0, 'U': 5, '!': 7, '_': 0 };
+const SPAWN = { '1': 'imp', '2': 'pinky', '3': 'caco', '4': 'soldier', '5': 'lostsoul', '6': 'baron', '@': 'sporeling', '&': 'vulture',
+  '7': 'sergent', '8': 'commando', '9': 'chevalier', '0': 'revenant', 'N': 'mancubus', 'Y': 'arachno', 'W': 'elementaire',
+  'X': 'cyber', 'Q': 'araignee', 'Z': 'archivile', 'O': 'spectre' };
+const ITEM = { 'H': 'medkit', 'A': 'ammo', 'S': 'shotgun', 'V': 'armor', 'C': 'chaingun', 'L': 'launcher', 'm': 'bullets', 'k': 'rockets', 'r': 'keyRed', 'b': 'keyBlue', 'j': 'keyYellow', 'K': 'berserk', 'I': 'invis', 'M': 'mega', 'G': 'backpack',
+  'h': 'stim', '+': 'bonusSante', '*': 'bonusArmure', 'v': 'armorBlue', 's': 'soul', 'i': 'invul', 'u': 'suit', 'c': 'computerMap',
+  'g': 'goggles', 'a': 'clipBox', 'e': 'shellBox', 'x': 'rocketBox', 'n': 'cells', 'p': 'cellPack', 'w': 'chainsaw', 'z': 'plasma', 'y': 'bfg' };
 
 /* niveaux de l'éditeur, gardés dans le navigateur (localStorage) */
 const CLE_NIVEAUX = 'doomed_niveaux', CLE_TEST = 'doomed_test';
@@ -768,7 +777,7 @@ function validateMap(m) {
       if (row.length !== w) errs.push(`light ligne ${y} : ${row.length} caractères au lieu de ${w}`);
       for (let x = 0; x < row.length; x++) {
         const c = row[x];
-        if (!/[0-9f]/.test(c)) errs.push(`light (${x},${y}) caractère inconnu « ${c} »`);
+        if (!/[0-9fgs]/.test(c)) errs.push(`light (${x},${y}) caractère inconnu « ${c} »`);
       }
     }
   }
@@ -801,6 +810,7 @@ function validateMap(m) {
   }
 
   if (starts !== 1) errs.push(`${starts} départ(s) P au lieu de 1`);
+  if (R.some(r => r.includes('T')) && !R.some(r => r.includes('d'))) errs.push('téléporteur T sans arrivée d');
   if (exits < 1) errs.push('aucune sortie E accessible');
   return errs;
 }
@@ -814,7 +824,8 @@ function loadLevel(i) {
     doors: [], enemies: [], items: [], secrets: [], start: { x: 1.5, y: 1.5, a: m.angle || 0 }, sky: !!m.sky };
   L.floorType = new Uint8Array(w * h);
   L.light = new Float32Array(w * h).fill(1);
-  L.flicker = [];
+  L.flicker = []; L.glow = []; L.strobe = [];   // lumières : f vacille, g pulse, s clignote (lot 6)
+  L.telep = []; L.arrivees = [];
 
   const lightRows = (typeof m.light === 'string') ? [m.light] : (Array.isArray(m.light) ? m.light : null);
   if (lightRows && lightRows.length >= h) {
@@ -822,8 +833,8 @@ function loadLevel(i) {
       const rowStr = String(lightRows[y]);
       for (let x = 0; x < w; x++) {
         const ch = rowStr[x];
-        if (ch === 'f') {
-          L.flicker.push(y * w + x);
+        if (ch === 'f' || ch === 'g' || ch === 's') {
+          (ch === 'f' ? L.flicker : ch === 'g' ? L.glow : L.strobe).push(y * w + x);
           L.light[y * w + x] = 1;
         } else if (ch >= '0' && ch <= '9') {
           L.light[y * w + x] = Number(ch) / 9;
@@ -837,6 +848,9 @@ function loadLevel(i) {
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const c = m.rows[y][x];
     if (c === '~') L.floorType[y * w + x] = 1;
+    else if (c === '_') L.floorType[y * w + x] = 2;                       // nukage (vert, brûle moins vite que la lave)
+    else if (c === 'T') { L.floorType[y * w + x] = 3; L.telep.push({ x, y }); }   // téléporteur : vers la n-ième arrivée d
+    else if (c === 'd') L.arrivees.push({ x: x + 0.5, y: y + 0.5 });
     L.grid[y * w + x] = LEGEND[c];
     if (c === 'P') { L.start.x = x + 0.5; L.start.y = y + 0.5; }
     else if (SPAWN[c]) L.enemies.push({ type: SPAWN[c], x: x + 0.5, y: y + 0.5 });

@@ -15,7 +15,7 @@ Compilation (-build) : le jeu a sa propre cible, car des plugins sont limités �
 NNE, outils) ; il faut Visual Studio 2022 avec MSVC 14.44 et le SDK Windows 10.0.22621 (installés le 23/10).
 Les cartes à embarquer et la carte de démarrage (Menu) sont dans Config\\DefaultGame.ini / DefaultEngine.ini.
 """
-import argparse, subprocess, sys, time
+import argparse, shutil, subprocess, sys, time
 from pathlib import Path
 
 RACINE = Path(r'C:\workspace IA\Unreal')
@@ -31,6 +31,11 @@ def packager(ch, incremental, sortie=SORTIE):
     mode = 'incrémental' if incremental else 'complet'
     ch.note(f'packaging Windows (Shipping, cook {mode}) → {sortie}')
     t0 = time.time()
+    # l'archivage d'UAT ajoute sans nettoyer : d'anciens paquets resteraient à côté des nouveaux (le jeu chargerait
+    # les deux). On vide le jeu précédent, seulement s'il s'agit bien d'un jeu packagé (manifeste d'UAT présent).
+    ancien = sortie / 'Windows'
+    if (ancien / 'Manifest_UFSFiles_Win64.txt').exists():
+        shutil.rmtree(ancien)
     # un journal par passe : le repli en cook complet ne doit pas effacer la cause de l'échec incrémental
     with open(RACINE / f'DOOMED_packaging{"_incremental" if incremental else ""}.log', 'w', encoding='utf-8', errors='replace') as log:
         args = [UAT, 'BuildCookRun', f'-project={PROJET}', '-noP4', '-platform=Win64',

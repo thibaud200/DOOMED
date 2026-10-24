@@ -99,7 +99,19 @@ const sfx = {
 const MUSIQUE = { timer: null, pas: 0, prochain: 0, actif: true, vol: 0.5 };
 
 function musicStart() {
-  if (!AC || !MUSIQUE.actif || MUSIQUE.timer) return;
+  if (!AC || !MUSIQUE.actif) return;
+  // musique de Freedoom (03b_musique.js) : un morceau par niveau, dans l'ordre des cartes, en boucle sur la liste
+  if (typeof musiqueFreedoomDebut === 'function' && typeof MUSIQUES_FREEDOOM !== 'undefined') {
+    const n = (typeof G !== 'undefined' && G.level) || 0;
+    if (MUSIQUE.timer && MUSIQUE_FD.timer === MUSIQUE.timer && MUSIQUE_FD.piste === n % MUSIQUES_FREEDOOM.pistes.length) return;
+    if (MUSIQUE.timer && !MUSIQUE_FD.timer) return;          // repli déjà en route (synthé indisponible) : on le garde
+    musicStop();
+    try {
+      // MUSIQUE.timer reste le témoin « musique en cours » pour le reste du jeu
+      if (musiqueFreedoomDebut(n, MUSIQUE.vol)) { MUSIQUE.timer = MUSIQUE_FD.timer; return; }
+    } catch (e) { musiqueFreedoomFin(); }   // contexte audio incomplet : ancienne boucle synthétisée
+  }
+  if (MUSIQUE.timer) return;
   const pasDur = 60 / 140 / 2, motifBasse = [55, 55, 65, 55, 73, 55, 65, 49];
 
   function tick() {
@@ -119,6 +131,7 @@ function musicStart() {
 }
 
 function musicStop() {
+  if (typeof musiqueFreedoomFin === 'function') musiqueFreedoomFin();
   if (!MUSIQUE.timer) return;
   clearInterval(MUSIQUE.timer);
   MUSIQUE.timer = null;

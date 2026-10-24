@@ -33,12 +33,19 @@ addEventListener('error', e => {
 <script src="js/01_core.js"></script>
 <script src="js/01b_images_ia.js"></script>
 <script src="js/01c_images_freedoom.js"></script>
+<script src="js/01d_musiques_freedoom.js"></script>
+<script src="js/01e_sons_freedoom.js"></script>
+<script src="js/01f_interface_freedoom.js"></script>
 <script src="js/02_assets.js"></script>
 <script src="js/03_audio.js"></script>
+<script src="js/03b_musique.js"></script>
+<script src="js/03c_sons.js"></script>
 <script src="js/04_maps.js"></script>
 <script src="js/05_render.js"></script>
 <script src="js/06_game.js"></script>
 <script src="js/07_hud.js"></script>
+<script src="js/07b_interface.js"></script>
+<script src="js/07c_menus.js"></script>
 <script src="js/10_editeur_logique.js"></script>
 <script src="js/11_editeur_ui.js"></script>
 
@@ -52,12 +59,19 @@ const CONTRAT = {
   '01_core.js': 'W H HUD_H PLAY_H HOR TEX cv ctx fitCanvas clamp rand randInt angNorm rgb makeCanvas FB_IMG FB ZBUF text KEYS PRESSED MOUSE pressed ENTER FATAL showFatal DEBUG_FPS DEBUG_ASSETS FPS frame',
   '01b_images_ia.js': 'IMAGES_IA',
   '01c_images_freedoom.js': 'IMAGES_FREEDOOM',
+  '01d_musiques_freedoom.js': 'MUSIQUES_FREEDOOM',
+  '01e_sons_freedoom.js': 'SONS_FREEDOOM',
+  '01f_interface_freedoom.js': 'INTERFACE_FREEDOOM',
   '02_assets.js': 'texFromCanvas grit TX WALL_TEX MONSTRES_GENERES enregistrerPoses ASSET_LIST drawAssetSheet imageIA appliquerImagesIA OBJETS_IA appliquerObjetsIA',
   '03_audio.js': 'audioUnlock tone noise distVol sfx',
+  '03b_musique.js': 'SynthFM lireMidi lireGenmidi musiqueFreedoomDebut musiqueFreedoomFin MUSIQUE_FD',
+  '03c_sons.js': 'jouerSonFD SONS_MONSTRES SONS_JEU',
   '04_maps.js': 'CELL_EMPTY CELL_BRICK CELL_TECH CELL_DOOR CELL_EXIT LEGEND SPAWN ITEM MAPS CLE_NIVEAUX CLE_TEST validateMap loadLevel',
   '05_render.js': 'FOV_PLANE VSCALE shadeOf shadePx camera lumiere render3D renderFloorCeil castWalls drawSprites',
   '06_game.js': 'G ENEMY_DEF wantsPointerLock onPointerUnlock say inventaire newPlayer startGame optionsTest startLevel restartLevel mkEnemy solidCell solidAt tryMove losClear computeFlow gameUpdate updatePlay updateWorld updateDoors updateEnemies updateShots updatePickups wake wakeNear hurtPlayer damageEnemy fire hitscan spawnFireball useAction enemyTex collectSprites',
-  '07_hud.js': 'gameDraw hudBg panel fmtTime drawWeapon drawHUD drawFace drawMinimap drawTitle drawVictory',
+  '07b_interface.js': 'IU interfaceDoomPrete texteDoom largeurTexteDoom nombreDoom chiffresDoom barreDoom nomVisage carteAuto statsNiveau ecranStats ecranFin TEXTE_FIN',
+  '07c_menus.js': 'DIFFICULTES NB_SAUVEGARDES nouveauMenu menuActif menuMaj dessinerMenu lancerPartie codesTriche etatPartie sauverPartie chargerPartie lireSauvegardes',
+  '07_hud.js': 'gameDraw doom fondTitre hudBg panel fmtTime drawWeapon drawHUD drawFace drawMinimap drawTitle drawVictory',
   '10_editeur_logique.js': 'ED_LIMITES',
   '11_editeur_ui.js': 'ED ED_COULEURS ED_NOMS',
 };
@@ -79,6 +93,7 @@ function test(name, fn) {
 }
 const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 const typeOf = n => { try { return (0, eval)('typeof ' + n); } catch (e) { return 'undefined'; } };
+G.classique = true;   // groupes 1 à 9 : écran titre, HUD et pause d'origine ; l'interface Doom est testée au groupe 10
 const step = (sec, each) => { for (let i = 0; i < sec * 60; i++) { if (each) each(i); gameUpdate(1 / 60); PRESSED.clear(); MOUSE.dx = 0; } };
 const press = code => { PRESSED.add(code); gameUpdate(1 / 60); PRESSED.clear(); };
 
@@ -341,10 +356,11 @@ group('7. Tests d\'acceptation des micro-tâches (INSTRUCTIONS_IA.md)');
 const PAS_FAITE = 'micro-tâche pas encore faite';
 const srcDe = n => typeOf(n) === 'function' ? String((0, eval)(n)) : '';
 function textesDessines(fn) {   // tout le texte dessiné pendant fn (text() et ctx.fillText)
-  const vus = [], t = window.text, f = ctx.fillText;
+  const vus = [], t = window.text, f = ctx.fillText, td = window.texteDoom;
   window.text = function (s) { vus.push(String(s)); return t.apply(this, arguments); };
   ctx.fillText = function (s) { vus.push(String(s)); return f.apply(this, arguments); };
-  try { fn(); } finally { window.text = t; ctx.fillText = f; }
+  window.texteDoom = function (s) { vus.push(String(s)); return td.apply(this, arguments); };   // police de Doom (07b)
+  try { fn(); } finally { window.text = t; ctx.fillText = f; window.texteDoom = td; }
   return vus.join(' | ');
 }
 function avecCarte(rows, fn) {   // carte de test ajoutée le temps du test
@@ -391,9 +407,9 @@ test('[1d] un ennemi qui ne voit pas le joueur le rejoint en contournant les mur
   const d1 = Math.hypot(imp.x - G.P.x, imp.y - G.P.y);
   assert(d1 < 2, `le diablotin n'a pas rejoint le joueur en 15 s (distance ${d0.toFixed(1)} → ${d1.toFixed(1)})`);
 });
-test('[2a] table WEAPONS : 5 armes, pistolet et fusil inchangés', () => {
+test('[2a] table WEAPONS : 5 armes d’origine (+ tronçonneuse, plasma, BFG), pistolet et fusil inchangés', () => {
   if (typeOf('WEAPONS') === 'undefined') return PAS_FAITE;
-  assert(Array.isArray(WEAPONS) && WEAPONS.length === 5, 'WEAPONS doit être un tableau de 5 armes');
+  assert(Array.isArray(WEAPONS) && WEAPONS.length === 8, 'WEAPONS doit être un tableau de 8 armes (5 d’origine, puis tronçonneuse, plasma, BFG)');
   const champs = ['name', 'ammo', 'cool', 'pellets', 'spread', 'dmgMin', 'dmgMax', 'range'];
   WEAPONS.forEach((w, i) => { const m = champs.filter(k => !(k in w)); assert(!m.length, `arme ${i} : champ(s) manquant(s) ${m.join(', ')}`); });
   const [p, f, g, c, r] = WEAPONS;
@@ -406,7 +422,8 @@ test('[2a] table WEAPONS : 5 armes, pistolet et fusil inchangés', () => {
 test('[2b] joueur : armes possédées et munitions', () => {
   const p = newPlayer();
   if (!('owned' in p)) return PAS_FAITE;
-  assert(JSON.stringify(p.owned) === '[true,false,true,false,false]', 'owned doit valoir [true, false, true, false, false] ; vaut ' + JSON.stringify(p.owned));
+  assert(JSON.stringify(p.owned) === '[true,false,true,false,false,false,false,false]', 'owned : pistolet et poing seulement (8 armes) ; vaut ' + JSON.stringify(p.owned));
+  assert(p.cells === 0, 'cellules d’énergie : 0 au départ');
   assert(p.bullets === 50 && p.rockets === 0, `bullets=${p.bullets} rockets=${p.rockets} (attendu 50 / 0)`);
   assert(['hasShotgun', 'shells', 'armor', 'hp'].every(k => k in p) && p.weapon === 0, 'des champs existants du joueur ont disparu');
 });
@@ -754,7 +771,7 @@ test('[13f] peindre : immuable, règles du bord, départ unique', () => {
   assert(a !== g && a[3][3] === '#' && g.join() === copie, 'doit renvoyer un NOUVEAU tableau sans modifier l\'ancien');
   assert(peindre(g, 0, 3, '.') === g, 'sol sur le bord : refusé (le même tableau est renvoyé)');
   assert(peindre(g, 0, 3, '%')[3][0] === '%', 'mur sur le bord : accepté');
-  assert(peindre(g, 30, 3, '#') === g && peindre(g, 3, 3, 'Z') === g, 'hors carte ou caractère inconnu : refusé');
+  assert(peindre(g, 30, 3, '#') === g && peindre(g, 3, 3, 'µ') === g, 'hors carte ou caractère inconnu : refusé');
   const b = peindre(g, 5, 5, 'P');
   assert(b[5][5] === 'P' && b[1][1] === '.' && b.join('').split('P').length === 2, 'poser P doit retirer l\'ancien P');
 });
@@ -1129,7 +1146,7 @@ test('[6d] rendu : ciel au plafond, lave au sol', () => {
   if (!/sky/.test(srcDe('renderFloorCeil'))) return PAS_FAITE;
   MAPS.push({ name: 'TEST', angle: 0, sky: true, rows: CARTE_LAVE });
   try {
-    const L = loadLevel(MAPS.length - 1), ciel = new Set(TX.sky.px), lave = new Set(TX.lava.px);
+    const L = loadLevel(MAPS.length - 1), ciel = new Set(TX.sky.px), lave = new Set((TX.lavaAnim || TX.lava).px);   // lave animée : l'image du moment
     const part = (y0, y1, set) => { let n = 0, t = 0; for (let y = y0; y < y1; y += 3) for (let x = 0; x < W; x += 7) { t++; if (set.has(FB[y * W + x])) n++; } return n / t; };
     render3D({ x: 1.5, y: 1.5, a: 0.6 }, L, []);
     assert(part(0, 30, ciel) > 0.9, 'en haut de l\'écran, le plafond doit montrer TX.sky (sans assombrissement)');
@@ -1226,6 +1243,32 @@ test('[9c] touche M : musique oui / non', () => {
   press('KeyM'); assert(MUSIQUE.actif === false && /musique/i.test(G.msg), 'M : musique coupée et message attendus');
   press('KeyM'); assert(MUSIQUE.actif === true, 'M de nouveau : musique remise');
   musicStop();
+});
+test('[9e] bruitages Freedoom : présents, branchés sur sfx, repli sans audio', () => {
+  if (typeOf('SONS_FREEDOOM') === 'undefined' || typeOf('jouerSonFD') !== 'function') return PAS_FAITE;
+  assert(Object.keys(SONS_FREEDOOM).length >= 100, 'il manque des bruitages');
+  for (const [k, v] of Object.entries(SONS_JEU)) assert(v === null || SONS_FREEDOOM[v], 'bruitage inconnu pour sfx.' + k + ' : ' + v);
+  for (const [t, m] of Object.entries(SONS_MONSTRES))
+    for (const nom of [].concat(m.vue, m.douleur, m.mort)) assert(SONS_FREEDOOM[nom], 'bruitage inconnu pour ' + t + ' : ' + nom);
+  const s = SONS_FREEDOOM.DSPISTOL; assert(s.f >= 8000 && atob(s.d).length > 1000, 'DSPISTOL illisible');
+  const sauve = AC; AC = null;
+  try { assert(jouerSonFD('DSPISTOL', 1) === false, 'sans audio, rien ne doit être joué'); for (const n of SONS.split(' ')) sfx[n]('imp', 0.5); }
+  finally { AC = sauve; }
+});
+test('[9d] musiques Freedoom : morceaux, instruments et synthétiseur FM', () => {
+  if (typeOf('MUSIQUES_FREEDOOM') === 'undefined' || typeOf('SynthFM') !== 'function') return PAS_FAITE;
+  assert(MUSIQUES_FREEDOOM.pistes.length >= 30, 'il manque des morceaux : ' + MUSIQUES_FREEDOOM.pistes.length);
+  const u8 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const banque = lireGenmidi(u8(MUSIQUES_FREEDOOM.genmidi));
+  assert(banque.length === 175, 'GENMIDI : 175 instruments attendus');
+  const m = lireMidi(u8(MUSIQUES_FREEDOOM.pistes[0].midi));
+  assert(m.evs.length > 100 && m.duree > 30, 'premier morceau trop court ou vide');
+  const s = new SynthFM(banque, 22050); s.charger(m);
+  const x = s.rendre(22050 * 6);                     // 6 premières secondes
+  let somme = 0, moy = 0;
+  for (const v of x) { assert(Number.isFinite(v) && Math.abs(v) <= 1, 'échantillon invalide'); somme += v * v; moy += v; }
+  assert(Math.sqrt(somme / x.length) > 0.01, 'le synthétiseur ne produit pas de son');
+  assert(Math.abs(moy / x.length) < 0.02, 'composante continue non retirée');
 });
 test('[10a] mort : la caméra tombe au sol', () => {
   if (!/\bz\s*:/.test(srcDe('gameDraw'))) return PAS_FAITE;
@@ -1355,11 +1398,12 @@ group('9. Monstres (tous ceux de ENEMY_DEF, y compris ceux créés par le modèl
 test('[monstres] fiches valides', () => {
   const pb = [], n = (v, a, b) => typeof v === 'number' && v >= a && v <= b;
   for (const [t, f] of Object.entries(ENEMY_DEF)) {
-    if (!(n(f.hp, 10, 1500) && n(f.speed, 0.3, 4) && n(f.melee, 0, 60) && n(f.r, 0.2, 0.55) && n(f.scale, 0.35, 1.4))) pb.push(t + ' : hp, speed, melee, r ou scale hors bornes');
-    if (!(f.melee > 0 || f.ranged || f.hitscan || f.charge)) pb.push(t + ' : aucune attaque');
-    for (const k of ['ranged', 'hitscan', 'charge'])
+    // boss de Doom II (cyberdémon, araignée cervelle) : jusqu'à 4000 PV et deux fois la taille
+    if (!(n(f.hp, 10, f.boss ? 4000 : 1500) && n(f.speed, 0.3, 4) && n(f.melee, 0, 60) && n(f.r, 0.2, 0.55) && n(f.scale, 0.35, f.boss ? 2 : 1.4))) pb.push(t + ' : hp, speed, melee, r ou scale hors bornes');
+    if (!(f.melee > 0 || f.ranged || f.hitscan || f.charge || f.flamme)) pb.push(t + ' : aucune attaque');
+    for (const k of ['ranged', 'hitscan', 'charge', 'flamme'])
       if (f[k] && !(f[k].min < f[k].max && Array.isArray(f[k].cool) && f[k].cool[0] <= f[k].cool[1])) pb.push(`${t}.${k} incohérent`);
-    if (f.ranged && !['fire', 'blue', 'green'].includes(f.ranged.color)) pb.push(t + ' : couleur de boule de feu inconnue');
+    if (f.ranged && !['fire', 'blue', 'green', 'tracer', 'manc', 'apls', 'rocket'].includes(f.ranged.color)) pb.push(t + ' : couleur de boule de feu inconnue');
   }
   assert(!pb.length, pb.join(' ; '));
 });
@@ -1420,13 +1464,15 @@ test('[15a] voixMonstre : voix déduite de la fiche', () => {
   assert(b.f === Math.max(45, Math.min(700, Math.round(700 - 1.1 * 350 - 600 / 4))), 'formule de f non respectée pour le baron');
 });
 test('[15b] cris, douleur et mort selon la voix du monstre', () => {
-  if (!/voixMonstre/.test(String(sfx.sight)) || !/voixMonstre/.test(String(sfx.edeath)) || !/voixMonstre/.test(String(sfx.epain))) return PAS_FAITE;
+  // sons synthétisés (repli quand un monstre n'a pas de bruitage Freedoom, voir 03c_sons.js)
+  const S = n => sfx[n].synth || sfx[n];
+  if (!/voixMonstre/.test(String(S('sight'))) || !/voixMonstre/.test(String(S('edeath'))) || !/voixMonstre/.test(String(S('epain')))) return PAS_FAITE;
   const vb = voixMonstre('baron'), vc = voixMonstre('caco');
-  assert(sonsJoues(() => sfx.sight('baron', 1))[0] === vb.f && sonsJoues(() => sfx.sight('caco', 1))[0] === vc.f, 'sight : premier son à vo.f');
-  assert(sonsJoues(() => sfx.sight('imp', 1))[0] === 300, 'le diablotin garde son cri (300 Hz)');
-  assert(Math.abs(sonsJoues(() => sfx.edeath('caco', 1))[0] - Math.round(vc.f * 1.2)) <= 1, 'edeath : premier son à vo.f × 1,2');
-  assert(Math.abs(sonsJoues(() => sfx.epain(1, 'baron'))[0] - Math.round(vb.f * 1.3)) <= 1, 'epain(v, type) : premier son à vo.f × 1,3');
-  assert(sonsJoues(() => sfx.epain(1))[0] === 250, 'epain sans type : son actuel (250 Hz)');
+  assert(sonsJoues(() => S('sight')('baron', 1))[0] === vb.f && sonsJoues(() => S('sight')('caco', 1))[0] === vc.f, 'sight : premier son à vo.f');
+  assert(sonsJoues(() => S('sight')('imp', 1))[0] === 300, 'le diablotin garde son cri (300 Hz)');
+  assert(Math.abs(sonsJoues(() => S('edeath')('caco', 1))[0] - Math.round(vc.f * 1.2)) <= 1, 'edeath : premier son à vo.f × 1,2');
+  assert(Math.abs(sonsJoues(() => S('epain')(1, 'baron'))[0] - Math.round(vb.f * 1.3)) <= 1, 'epain(v, type) : premier son à vo.f × 1,3');
+  assert(sonsJoues(() => S('epain')(1))[0] === 250, 'epain sans type : son actuel (250 Hz)');
   for (const s of SONS.split(' ')) assert(typeof sfx[s] === 'function', 'son disparu : sfx.' + s);
 });
 test('[15c] la douleur d\'un monstre utilise sa voix', () => {
@@ -1797,7 +1843,7 @@ test('[mo] deux monstres côte à côte (ou un groupe) passent une porte trop é
         for (const gr of groupes) {
           let s = 7919; Math.random = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648);
           startLevel(i);
-          G.enemies = gr.map(([t, x]) => { const e = mkEnemy(t, x, 2.5); e.state = 'chase'; return e; });   // symétriques devant le passage
+          G.enemies = gr.map(([t, x]) => { const e = mkEnemy(t, x, 2.5); e.state = 'chase'; e.cool = 1e9; return e; });   // symétriques devant le passage ; sans tirer (sinon les boules du caco touchent les barons et ils se battent)
           let ok = false;
           for (let f = 0; f < 60 * 15 && !ok; f++) { G.P.hp = 1e6; gameUpdate(1 / 60); ok = G.enemies.every(e => e.y > 5); }
           if (!ok) bloques.push((passage === '=' ? 'porte' : 'passage') + ' : ' + gr.map(g => g[0]).join(' + '));
@@ -1843,13 +1889,297 @@ test('[ciel] le ciel est lu ligne par ligne : haut de la texture en haut de l\'�
   } finally { TX.sky = avant; startGame(); }
 });
 
+/* ---------------- 10. interface à la Doom (07b) : après le chargement de ses images ---------------- */
+function testsInterfaceDoom() {
+  G.classique = false;   // les tests précédents vérifient l'interface d'origine
+  group('10. Interface à la Doom (07b : barre, visage, carte, statistiques, fin)');
+  if (typeOf('interfaceDoomPrete') !== 'function') { test('[10] interface Doom', () => PAS_FAITE); return; }
+  test('[10a] images d’interface chargées, barre traduite de 320×32', () => {
+    assert(interfaceDoomPrete(), 'images Freedoom non chargées');
+    assert(IU.STBAR_FR.width === 320 && IU.STBAR_FR.height === 32, 'STBAR_FR : ' + IU.STBAR_FR.width + '×' + IU.STBAR_FR.height);
+    assert(doom(), 'gameDraw doit utiliser l’interface Doom quand ses images sont prêtes');
+  });
+  // espion : chaque texte en police de Doom doit tenir dans l'écran
+  const hors = [], td = window.texteDoom;
+  window.texteDoom = function (str, x, y, e, align) {
+    const l = largeurTexteDoom(str, e), x0 = align === 'center' ? x - l / 2 : align === 'right' ? x - l : x;
+    if (x0 < -1 || x0 + l > W + 1 || y < -1 || y + 7 * (e || ECH) > H + 1) hors.push(`« ${str} » en (${x | 0}, ${y | 0})`);
+    return td.apply(this, arguments);
+  };
+  try {
+    for (const st of ['play', 'pause', 'dead', 'clear', 'victory']) for (const t of [0.3, 2, 99])
+      test(`[10b] écran « ${st} » (t = ${t} s) en interface Doom : se dessine, textes dans l'écran`, () => {
+        startGame(); G.P.hp = 37; G.state = st; G.stateT = t; G.msg = 'Clé bleue !'; G.msgT = 1; hors.length = 0;
+        gameDraw(); G.automap = true; gameDraw(); G.automap = false;
+        assert(!hors.length, 'texte hors écran : ' + hors.slice(0, 4).join(' ; '));
+      });
+  } finally { window.texteDoom = td; }
+  test('[10c] barre : une image par clé possédée, chiffres des munitions', () => {
+    startGame();
+    const images = keys => {
+      G.P.keys = keys; const n = [], d = ctx.drawImage;
+      ctx.drawImage = function (im) { n.push(Object.keys(IU).find(k => IU[k] === im)); return d.apply(this, arguments); };
+      try { barreDoom(); } finally { ctx.drawImage = d; }
+      return n;
+    };
+    const sans = images({}), avec = images({ red: true, blue: true, yellow: true });
+    assert(['STKEYS0', 'STKEYS1', 'STKEYS2'].every(k => avec.includes(k) && !sans.includes(k)), 'clés : ' + avec.filter(k => /KEYS/.test(k)));
+    assert(sans.includes('STBAR_FR') && sans.some(k => /^STF/.test(k)), 'fond ou visage absent');
+    G.P.weapon = 1; G.P.shells = 37;
+    const n = images({});
+    assert(n.includes('STTNUM3') && n.includes('STTNUM7'), 'munitions de l’arme en main (37) non dessinées');
+  });
+  test('[10d] visage : santé, côté du coup, sourire, mort, invincible', () => {
+    startGame(); const P = G.P, now = performance.now(); G.sourireJusqua = G.ouchJusqua = 0; G.tirDepuis = 0;
+    P.hp = 100; P.hurt = 0; assert(/^STFST0\d$/.test(nomVisage()), '100 PV : ' + nomVisage());
+    P.hp = 10; assert(/^STFST4\d$/.test(nomVisage()), '10 PV : ' + nomVisage());
+    P.hp = 60; P.hurt = 0.3; P.faceDir = 1; assert(nomVisage() === 'STFTR10', 'coup venu de droite : ' + nomVisage());
+    P.faceDir = -1; assert(nomVisage() === 'STFTL10', 'coup venu de gauche : ' + nomVisage());
+    G.ouchJusqua = now + 500; assert(nomVisage() === 'STFOUCH1', 'gros coup : ' + nomVisage()); G.ouchJusqua = 0;
+    P.hurt = 0; G.sourireJusqua = now + 500; assert(nomVisage() === 'STFEVL1', 'arme ramassée : ' + nomVisage()); G.sourireJusqua = 0;
+    G.triche = { invincible: true }; assert(nomVisage() === 'STFGOD0', 'invincible : ' + nomVisage()); G.triche = null;
+    P.hp = 0; assert(nomVisage() === 'STFDEAD0', 'mort : ' + nomVisage());
+    for (let hp = 0; hp <= 100; hp += 7) { P.hp = hp; const n = nomVisage(); assert(_pret(n), 'image inconnue : ' + n); }
+  });
+  test('[10e] carte automatique : Tab l’affiche, seuls les murs déjà vus sont tracés', () => {
+    startGame(); G.state = 'play';
+    const a = G.automap; press('Tab'); assert(G.automap === !a, 'Tab doit basculer G.automap'); press('Tab');
+    const rouges = () => { const d = ctx.getImageData(0, 0, W, PLAY_H - 20).data; let n = 0; for (let k = 0; k < d.length; k += 4) if (d[k] > 150 && d[k + 1] < 40 && d[k + 2] < 40) n++; return n; };   // sans le nom du niveau (police rouge) en bas
+    G.L.vu = new Uint8Array(G.L.w * G.L.h); carteAuto();
+    assert(rouges() === 0, 'rien n’est encore vu : la carte doit être vide');
+    render3D(G.P, G.L, []); carteAuto();
+    assert(rouges() > 20, 'les murs vus par le joueur doivent apparaître');
+  });
+  test('[10f] statistiques : décompte depuis 0, objets lâchés non comptés, nombres exacts à la fin', () => {
+    startGame(); G.state = 'clear'; G.stateT = 0.01;
+    G.items.push({ type: 'ammo', x: 1, y: 1, taken: false });
+    const [, objets] = statsNiveau();
+    G.items.pop();
+    assert(objets === statsNiveau()[1], 'un objet lâché par un monstre ne doit pas compter');
+    let t = textesDessines(() => gameDraw());
+    assert(!/Secrets\s*:/.test(t), 'pendant le décompte, pas encore les nombres exacts');
+    G.stateT = 99; t = textesDessines(() => gameDraw());
+    const s = G.L.secrets || [], n = s.filter(x => x.found).length;
+    assert(new RegExp(`Secrets\\s*:\\s*${n}\\s*/\\s*${s.length}`).test(t), 'ligne « Secrets : n / total » absente : ' + t);
+  });
+  test('[10g] texte de fin : défile lettre par lettre', () => {
+    startGame(); G.state = 'victory'; G.stateT = 0.5;
+    const debut = textesDessines(() => gameDraw());
+    G.stateT = 60; const fin = textesDessines(() => gameDraw());
+    assert(fin.includes(TEXTE_FIN[0]) && !debut.includes(TEXTE_FIN[0]), 'le texte doit apparaître progressivement');
+  });
+  testsMenusDoom();
+  testsDoom2();
+  startGame();
+}
+
+/* ---------------- 12. bestiaire, armes, objets et mécanismes de Doom (lots 4 à 6) ---------------- */
+function testsDoom2() {
+  group('12. Bestiaire de Doom II, tronçonneuse / plasma / BFG, objets, téléporteurs, interrupteurs, lumières');
+  if (typeOf('bestiaire') !== 'function') { test('[12] lots 4 à 6', () => PAS_FAITE); return; }
+  const SALLE = ['##########', '#P.......#', '#........#', '#........#', '####E#####'];
+  const seul = (rows, fn) => avecCarte(rows, i => { startLevel(i); G.enemies = []; G.items = []; G.shots = []; G.P.hp = 100; G.P.armor = 0; return fn(i); });
+  test('[12a] les cartes du jeu reçoivent le bestiaire de Doom II, toujours le même, et deux boss', () => {
+    const vus = new Set(), avant = G.skill;
+    try {
+      G.skill = 2;
+      for (let i = 0; i < NB_CARTES_JEU; i++) {
+        startGame(); startLevel(i);
+        const types = G.enemies.map(e => e.type).join();
+        startLevel(i); assert(G.enemies.map(e => e.type).join() === types, `${G.L.name} : monstres différents d'une partie à l'autre`);
+        for (const e of G.enemies) vus.add(e.type);
+        if (i === NB_CARTES_JEU - 1 && G.enemies.length) assert(types.includes('cyber'), 'cyberdémon attendu au dernier niveau');
+        if (i === NB_CARTES_JEU - 3 && G.enemies.length) assert(types.includes('araignee'), 'araignée cervelle attendue');
+      }
+    } finally { G.skill = avant; startGame(); }
+    const nouveaux = ['sergent', 'commando', 'chevalier', 'revenant', 'mancubus', 'arachno', 'elementaire', 'spectre'].filter(t => vus.has(t));
+    assert(nouveaux.length >= 6, 'trop peu de monstres de Doom II dans les cartes : ' + nouveaux);
+  });
+  test('[12b] combats entre monstres : la boule d’un diablotin touche un baron, qui se retourne contre lui', () => seul(SALLE, () => {
+    const imp = mkEnemy('imp', 2.5, 2.5), baron = mkEnemy('baron', 4.5, 2.5);
+    imp.state = baron.state = 'chase'; G.enemies = [imp, baron]; G.P.x = 8.5; G.P.y = 2.5;
+    spawnFireball(imp, G.P);
+    for (let k = 0; k < 60 && !baron.cible; k++) updateShots(1 / 60);
+    assert(baron.cible === imp, 'le baron touché doit cibler le diablotin');
+    assert(cibleDe(baron) === imp && cibleDe(imp) === G.P, 'cibles : baron → diablotin, diablotin → joueur');
+    const s0 = imp.hp; baron.cool = 0; baron.def = Object.assign({}, baron.def);   // le baron attaque le diablotin
+    for (let k = 0; k < 600 && imp.hp === s0; k++) updateEnemies(1 / 60), updateShots(1 / 60);
+    assert(imp.hp < s0, 'le baron doit blesser le diablotin');
+    const st = etatPartie(); assert(JSON.stringify(st).length > 100, 'sauvegarde possible pendant un combat entre monstres');
+  }));
+  test('[12c] tronçonneuse, plasma et BFG : munitions, projectiles, dégâts', () => seul(SALLE, () => {
+    const P = G.P, e = mkEnemy('baron', 3.5, 1.5); e.state = 'chase'; e.hp = 5000; G.enemies = [e];
+    P.x = 2.5; P.y = 1.5; P.a = 0; P.owned = P.owned.map(() => true);
+    P.weapon = 5; P.cool = 0; fire(); assert(e.hp < 5000, 'tronçonneuse : dégâts au contact');
+    P.x = 1.5; P.weapon = 6; P.cells = 10; P.cool = 0; const h = e.hp; fire();
+    assert(P.cells === 9 && G.shots.some(s => s.joueur && s.plasma), 'plasma : une cellule, un projectile');
+    for (let k = 0; k < 30; k++) updateShots(1 / 60);
+    assert(e.hp < h, 'plasma : le projectile blesse le baron');
+    P.weapon = 7; P.cells = 39; P.cool = 0; fire(); assert(P.weapon === 0 && P.cells === 39, 'BFG : 40 cellules nécessaires');
+    P.weapon = 7; P.cells = 80; P.cool = 0; const h2 = e.hp; fire();
+    assert(P.cells === 40 && P.bfgT > 0, 'BFG : charge avant le tir');
+    for (let k = 0; k < 90; k++) { updatePlay(1 / 60); PRESSED.clear(); }
+    assert(e.hp < h2 - 100, 'BFG : la boule et ses rayons blessent le baron (' + (h2 - e.hp) + ' PV)');
+    P.weapon = 2; press('Digit3'); assert(P.weapon === 5, '3 : poing → tronçonneuse'); press('Digit6'); assert(P.weapon === 6, '6 : plasma');
+  }));
+  test('[12d] nouveaux objets : santé, armures, sphères, combinaison, carte, munitions, armes', () => seul(SALLE, () => {
+    const P = G.P, prendre = type => { const it = { type, x: P.x, y: P.y, taken: false }; G.items = [it]; updatePickups(); return it.taken; };
+    P.hp = 150; assert(prendre('soul') && P.hp === 200, 'sphère d’âme : +100, 200 au plus');
+    P.hp = 100; assert(!prendre('stim'), 'stimulant inutile à 100 PV : laissé au sol');
+    assert(prendre('armorBlue') && P.armor === 200, 'méga-armure : 200');
+    assert(prendre('invul') && P.invulT > 0, 'invulnérabilité'); const hp = P.hp; hurtPlayer(50, P); assert(P.hp === hp, 'invulnérable : aucun dégât'); P.invulT = 0;
+    assert(prendre('computerMap') && G.L.carteComplete, 'carte informatique : toute la carte');
+    P.cells = 0; assert(prendre('cellPack') && P.cells === 100, 'pack de cellules : +100');
+    assert(prendre('bfg') && P.owned[7] && P.weapon === 7, 'BFG ramassé : choisi');
+    assert(prendre('chainsaw') && P.owned[5], 'tronçonneuse ramassée');
+    P.shells = 50; assert(!prendre('shellBox'), 'cartouches au maximum : boîte laissée au sol');
+    for (const t of OBJETS_NOUVEAUX) assert(ITEM_TEX[t] && ITEM_TEX[t]() && Object.values(ITEM).includes(t), `objet ${t} : image et caractère de carte attendus`);
+  }));
+  test('[12e] combinaison anti-radiations : ni lave ni nukage ne brûlent', () => seul(['##########', '#P.~~__..#', '#........#', '####E#####'], () => {
+    const P = G.P; P.x = 3.5; P.y = 1.5; P.hp = 100; P.combiT = 30;
+    step(1.05); assert(P.hp === 100, 'protégé par la combinaison');
+    P.combiT = 0; P.x = 5.5; step(2.1); assert(P.hp < 100 && P.hp >= 85, `nukage : 5 dégâts par seconde (PV ${P.hp})`);
+  }));
+  test('[12f] téléporteur T → arrivée d, télé-frag', () => seul(['##########', '#P.T.....#', '#.......d#', '####E#####'], () => {
+    const P = G.P, e = mkEnemy('imp', 8.5, 2.5); e.state = 'idle'; G.enemies = [e];
+    P.x = 3.5; P.y = 1.5; updatePlay(1 / 60); PRESSED.clear();
+    assert(Math.abs(P.x - 8.5) < 0.01 && Math.abs(P.y - 2.5) < 0.01, `le joueur doit arriver en d (il est en ${P.x.toFixed(1)}, ${P.y.toFixed(1)})`);
+    assert(e.state === 'dead', 'un monstre sur l’arrivée est écrasé');
+    assert(validateMap({ name: 't', rows: ['#####', '#PT.#', '##E##'] }).some(m => /arrivée/.test(m)), 'T sans d : carte refusée');
+  }));
+  test('[12g] interrupteur U : toutes les barrières ! s’ouvrent', () => seul(['##########', '#P.U.....#', '#....!!..#', '####E#####'], () => {
+    const L = G.L, P = G.P; P.x = 2.5; P.y = 1.5; P.a = 0;
+    assert(L.grid[2 * L.w + 5] === CELL_BARRIER, 'barrière fermée au départ');
+    useAction();
+    assert(L.grid[1 * L.w + 3] === CELL_SWITCH_ON && L.grid[2 * L.w + 5] === CELL_EMPTY && L.grid[2 * L.w + 6] === CELL_EMPTY, 'interrupteur allumé, barrières ouvertes');
+    assert(WALL_TEX[CELL_SWITCH] && WALL_TEX[CELL_SWITCH_ON] && WALL_TEX[CELL_BARRIER], 'textures d’interrupteur et de barrière');
+  }));
+  test('[12h] lumières : g pulse, s clignote ; sols animés', () => {
+    MAPS.push({ name: 'TEST', angle: 0, rows: ['#####', '#P..#', '##E##'], light: ['99999', '9gs99', '99999'] });
+    try {
+      startLevel(MAPS.length - 1); const L = G.L, g = 1 * L.w + 1, s = 1 * L.w + 2, vg = new Set(), vs = new Set();
+      for (let k = 0; k < 120; k++) { G.time = k / 30; updateWorld(1 / 60); vg.add(L.light[g].toFixed(2)); vs.add(L.light[s].toFixed(2)); }
+      assert(vg.size > 5 && vs.size === 2, `g doit varier en douceur (${vg.size} valeurs), s alterner deux valeurs (${vs.size})`);
+      const a = TX.lavaAnim; G.time += 0.13; updateWorld(1 / 60); assert(TX.lavaAnim && TX.lavaAnim !== a, 'la lave doit changer d’image');
+    } finally { MAPS.pop(); startGame(); }
+  });
+  test('[12i] élémentaire de douleur : 3 âmes à sa mort ; archi-infâme : ranime un cadavre', () => seul(SALLE, () => {
+    const pe = mkEnemy('elementaire', 4.5, 2.5); pe.state = 'chase'; G.enemies = [pe];
+    damageEnemy(pe, 10000);
+    assert(G.enemies.filter(e => e.type === 'lostsoul').length >= 1, 'des âmes perdues doivent jaillir');
+    const v = mkEnemy('archivile', 6.5, 2.5), mort = mkEnemy('imp', 7.2, 2.5);
+    mort.state = 'dead'; mort.t = 5; v.state = 'chase'; G.enemies = [v, mort]; G.kills = 1;
+    for (let k = 0; k < 60 && mort.state === 'dead'; k++) updateEnemies(1 / 60);
+    assert(mort.state !== 'dead' && mort.hp === mort.def.hp && G.kills === 0, 'le diablotin doit revenir à la vie');
+  }));
+  startGame();
+}
+
+function testsMenusDoom() {
+  if (typeOf('menuMaj') !== 'function') { test('[11] menus Doom', () => PAS_FAITE); return; }
+  const titre = () => { G.menu = null; G.state = 'title'; gameUpdate(1 / 60); };
+  const libelles = () => PAGES[G.menu.page].items().map(i => i.t);
+  const choisir = t => { const k = libelles().indexOf(t); assert(k >= 0, `« ${t} » absent du menu ${G.menu.page} : ` + libelles()); G.menu.sel = k; press('Enter'); };
+  test('[11a] écran titre : menu de Doom, 5 difficultés, Ultra-violence = G.skill 2', () => {
+    titre(); assert(G.menu && G.menu.page === 'principal', 'le menu principal doit s’ouvrir à l’écran titre');
+    const s0 = G.menu.sel; press('ArrowDown'); assert(G.menu.sel === (s0 + 1) % libelles().length, 'flèche bas : choix suivant');
+    choisir('Nouvelle partie'); assert(G.menu.page === 'difficulte' && libelles().length === 5, 'page des 5 difficultés attendue');
+    assert(G.menu.sel === 2, 'difficulté proposée : « Fais-moi mal ! »');
+    choisir('Ultra-violence');
+    assert(G.state === 'play' && G.menu === null && G.skill === 2 && G.difficulte === 3, `partie en Ultra-violence attendue (état ${G.state}, skill ${G.skill})`);
+  });
+  test('[11b] Cauchemar : confirmation, N annule, Entrée lance ; difficultés extrêmes', () => {
+    titre(); choisir('Nouvelle partie'); G.menu.sel = 4; press('Enter');
+    assert(G.menu.confirm, 'Cauchemar doit demander confirmation'); press('KeyN');
+    assert(!G.menu.confirm && G.state === 'title', 'N doit annuler'); press('Enter'); press('Enter');
+    assert(G.state === 'play' && G.difficulte === 4, 'Cauchemar non lancé');
+    G.P.hp = 100; G.P.armor = 0; hurtPlayer(10, { x: 0, y: 0 }); assert(G.P.hp === 85, 'Cauchemar : dégâts d’Ultra-violence (×1,5)');
+    titre(); choisir('Nouvelle partie'); choisir('Trop jeune pour mourir');
+    G.P.hp = 100; G.P.armor = 0; hurtPlayer(10, { x: 0, y: 0 }); assert(G.P.hp === 95, '« Trop jeune pour mourir » : moitié des dégâts');
+    const it = { type: 'bullets', x: G.P.x, y: G.P.y, taken: false }, b = G.P.bullets; G.items = [it]; updatePickups();
+    assert(G.P.bullets === Math.min(200, b + 40), 'munitions doublées attendues');
+    lancerPartie(2);
+  });
+  test('[11c] Échap en jeu : menu par-dessus la partie, « Reprendre » revient au jeu ; P : pause simple', () => {
+    lancerPartie(2); press('Escape');
+    assert(G.state === 'pause' && G.menu && libelles()[0] === 'Reprendre la partie', 'menu de pause attendu');
+    press('Enter'); assert(G.state === 'play' && !G.menu, 'Reprendre doit revenir au jeu');
+    press('KeyP'); assert(G.state === 'pause' && !G.menu, 'P : pause sans menu'); press('KeyP'); assert(G.state === 'play', 'P : reprendre');
+  });
+  test('[11d] options : réglettes et barre classique', () => {
+    const sauve = Object.assign({}, SETTINGS);
+    try {
+      lancerPartie(2); press('Escape'); choisir('Options');
+      SETTINGS.sens = 1; G.menu.sel = 0; press('ArrowRight'); assert(SETTINGS.sens === 1.25, 'sensibilité +0,25');
+      G.menu.sel = 1; SETTINGS.volume = 0.5; press('ArrowLeft'); assert(Math.abs(SETTINGS.volume - 0.4) < 1e-9, 'volume -0,1');
+      choisir("Barre d'état"); assert(SETTINGS.hudClassique === true && !doom(), 'barre classique attendue');
+      SETTINGS.hudClassique = false; assert(doom(), 'retour à la barre de Doom');
+      G.menu = nouveauMenu(); G.menu.pile.push(['principal', 0]); G.menu.page = 'options'; press('Escape');
+      assert(G.menu && G.menu.page === 'principal', 'Échap : page précédente');
+    } finally { Object.assign(SETTINGS, sauve); sauverReglages(); }
+  });
+  test('[11e] sauvegarde puis chargement : niveau, joueur, monstres, portes, objets', () => {
+    const avant = localStorage.getItem('doomed_sauvegardes');
+    try {
+      localStorage.removeItem('doomed_sauvegardes');
+      lancerPartie(3); startLevel(1);
+      const P = G.P; P.hp = 42; P.x += 0.25; P.keys = { red: true };
+      G.enemies[0].state = 'dead'; G.enemies[0].hp = 0; G.kills = 1;
+      if (G.items[0]) G.items[0].taken = true;
+      if (G.L.doors[0]) G.L.doors[0].open = 1;
+      const x = P.x, n = G.enemies.length;
+      press('Escape'); choisir('Sauvegarder'); G.menu.sel = 2; press('Enter');
+      assert(G.state === 'play' && lireSauvegardes()[2], 'emplacement 3 non écrit');
+      startGame(); assert(G.level === 0, 'nouvelle partie');
+      press('Escape'); choisir('Charger une partie'); G.menu.sel = 2; press('Enter');
+      assert(G.state === 'play' && G.level === 1 && G.difficulte === 3, 'mauvais niveau ou difficulté après chargement');
+      assert(G.P.hp === 42 && Math.abs(G.P.x - x) < 1e-9 && G.P.keys.red, 'joueur non restauré');
+      assert(G.enemies.length === n && G.enemies[0].state === 'dead' && G.enemies[0].def === ENEMY_DEF[G.enemies[0].type] && G.kills === 1, 'monstres non restaurés');
+      if (G.items[0]) assert(G.items[0].taken, 'objet ramassé non restauré');
+      if (G.L.doors[0]) assert(G.L.doors[0].open === 1, 'porte non restaurée');
+      assert(chargerPartie(5) === false, 'un emplacement vide ne se charge pas');
+    } finally { if (avant === null) localStorage.removeItem('doomed_sauvegardes'); else localStorage.setItem('doomed_sauvegardes', avant); lancerPartie(2); }
+  });
+  test('[11f] codes de triche : iddqd, idkfa, iddt, idclev', () => {
+    const tape = s => { for (const c of s) press(/\d/.test(c) ? 'Digit' + c : 'Key' + c.toUpperCase()); };
+    lancerPartie(2); G.triche = null;
+    tape('iddqd'); assert(G.triche && G.triche.invincible && /dieu/i.test(G.msg), 'iddqd : mode dieu');
+    G.P.hp = 50; hurtPlayer(30, { x: 0, y: 0 }); assert(G.P.hp === 50, 'mode dieu : aucun dégât');
+    tape('iddqd'); assert(!G.triche.invincible, 'iddqd une 2e fois : désactivé');
+    tape('idkfa'); assert(G.P.owned.every(Boolean) && G.P.keys.red && G.P.keys.blue && G.P.keys.yellow, 'idkfa : armes et clés');
+    tape('iddt'); assert(G.L.carteComplete, 'iddt : carte complète');
+    tape('idclev03'); assert(G.level === 2 && G.state === 'play', 'idclev03 : niveau 3 attendu (niveau ' + (G.level + 1) + ')');
+    G.triche = null;
+  });
+  test('[11g] chaque page de menu se dessine dans l’écran', () => {
+    const hors = [], td = window.texteDoom;
+    window.texteDoom = function (str, x, y, e, align) {
+      const l = largeurTexteDoom(str, e), x0 = align === 'center' ? x - l / 2 : align === 'right' ? x - l : x;
+      if (x0 < -1 || x0 + l > W + 1 || y < -1 || y + 7 * (e || ECH) > H + 1) hors.push(`« ${str} » (${G.menu.page})`);
+      return td.apply(this, arguments);
+    };
+    try {
+      for (const enJeu of [false, true]) for (const page of Object.keys(PAGES)) {
+        if (enJeu) { lancerPartie(2); G.state = 'pause'; } else G.state = 'title';
+        G.menu = nouveauMenu(page); gameDraw();
+        G.menu.confirm = { texte: 'Cauchemar : les monstres sont rapides et sans pitié. Vous êtes sûr ?', oui: () => {} }; gameDraw();
+      }
+    } finally { window.texteDoom = td; G.menu = null; }
+    assert(!hors.length, 'texte hors écran : ' + hors.slice(0, 4).join(' ; '));
+  });
+}
+
 /* ---------------- résultat ---------------- */
-document.getElementById('out').innerHTML = rows.join('');
-const sum = document.getElementById('sum');
-sum.className = nKo ? 'ko' : nWarn ? 'warn' : 'ok';
-sum.textContent = nKo ? `ÉCHEC : ${nKo} test(s) en échec, ${nOk} OK, ${nWarn} alerte(s)` : `TOUT EST VERT : ${nOk} tests OK` + (nWarn ? `, ${nWarn} alerte(s)` : '');
-document.title = (nKo ? '❌ ' : '✅ ') + 'DOOMED — tests';
-window.TEST_RESULT = { ok: nOk, ko: nKo, warn: nWarn };
+function afficherResultat() {
+  document.getElementById('out').innerHTML = rows.join('');
+  const sum = document.getElementById('sum');
+  sum.className = nKo ? 'ko' : nWarn ? 'warn' : 'ok';
+  sum.textContent = nKo ? `ÉCHEC : ${nKo} test(s) en échec, ${nOk} OK, ${nWarn} alerte(s)` : `TOUT EST VERT : ${nOk} tests OK` + (nWarn ? `, ${nWarn} alerte(s)` : '');
+  document.title = (nKo ? '❌ ' : '✅ ') + 'DOOMED — tests';
+  window.TEST_RESULT = { ok: nOk, ko: nKo, warn: nWarn };
+}
+const imagesIU = typeOf('IU') === 'undefined' ? [] : Object.values(IU).map(im => im.decode().catch(() => {}));
+Promise.all(imagesIU).then(() => { testsInterfaceDoom(); afficherResultat(); }, () => afficherResultat());
 </script>
 </body>
 </html>

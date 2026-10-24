@@ -204,6 +204,10 @@ def main():
     bp.evenement(ACTION, 'Terminer')
     bp.evenement(ACTION, 'Utiliser')
     bp.evenement(ACTION, 'Pause')
+    # musiques des niveaux (liste remplie par importer_musique.py), jouées par l'arrivée (type 5)
+    if 'Musiques' not in set(bp.variables(ACTION)):
+        bp.outil('add_object_variable', {'blueprint': bp.ref(ACTION), 'name': 'Musiques',
+                                         'object_class': {'refPath': '/Script/Engine.SoundBase'}, 'container_type': 'ARRAY'})
     # messages (clés, secrets, bilan) : WBP_Message par la mémoire de partie, PrintString n'existant pas en Shipping
     bp.dsl(ACTION, 'EventGraph', bp.annonces(dsl_fichier('actionnable.dsl')) + bp.annonceur(ACTION))
     relier_utiliser(ACTION)

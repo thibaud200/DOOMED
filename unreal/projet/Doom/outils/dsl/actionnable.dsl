@@ -15,6 +15,18 @@
     (CameraFades|StartCameraFade :self (Game|GetPlayerCameraManager 0) :FromAlpha 1.0 :ToAlpha 0.0 :Duration 1.5
       :Color (Utilities|Struct|MakeLinearColor 0.0 0.0 0.0 1.0))
     (Input|SetInputModeGameOnly :PlayerController (Game|GetPlayerController 0))
+    ; musique du niveau (Freedoom, importer_musique.py) : la carte E<n> joue le morceau n de la liste Musiques, en boucle
+    ; sur la liste ; le numéro est lu dans le nom de la carte (« E12_LaForge » : caractères 2 à 4 → « 12_ » → 12)
+    (Audio|PlaySound2D
+      :Sound (Utilities|Array|Get(acopy) :Array (Variables|Default|GetMusiques)
+               :"Dimension 1" (Math|Integer|%(Integer)
+                                (- (Math|Integer|Max(Integer)
+                                     (Utilities|String|StringToInteger
+                                       :InString (Utilities|String|Mid :SourceString (Game|GetCurrentLevelName) :Start 1 :Count 3))
+                                     1)
+                                   1)
+                                (Math|Integer|Max(Integer) (Utilities|Array|Length :TargetArray (Variables|Default|GetMusiques)) 1)))
+      :VolumeMultiplier 0.5)
     (Utilities|FlowControl|Delay :Duration 0.3)
     (bind partie (Utilities|Casting|CastToBP_DoomPartie :Object (Game|GetGameInstance))
       (:then

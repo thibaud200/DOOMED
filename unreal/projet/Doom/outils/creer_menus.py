@@ -54,8 +54,11 @@ def partie():
     # messages à l'écran de tout le jeu (bp.annonces) : la mémoire de partie tient l'écran WBP_Message
     bp.annonceur(PARTIE, relais=False)
     ecran_message()
-    if 'MessageEcran' not in set(bp.variables(PARTIE)):
-        bp.var_objet(PARTIE, 'MessageEcran', f'{MESSAGE}.WBP_Message_C')
+    # variable refaite à chaque passage : si l'écran a dû être recréé, l'ancienne pointe sur une classe disparue et le
+    # graphe ne compile plus (« Could not connect pin MessageEcran »)
+    if 'MessageEcran' in set(bp.variables(PARTIE)):
+        bp.outil('remove_variable', {'blueprint': bp.ref(PARTIE), 'name': 'MessageEcran'})
+    bp.var_objet(PARTIE, 'MessageEcran', f'{MESSAGE}.WBP_Message_C')
     arme = lambda nom, var: (f'''            (if (Utilities|String|Contains :SearchIn (Utilities|GetDisplayName :Object w) :Substring "{nom}")
               (Class|BPDoomSauvegarde|Set{var} :self sv :{var} true))''')
     bp.dsl(PARTIE, 'EventGraph', bp.annonces(f'''
@@ -123,8 +126,13 @@ def partie():
 
 
 def ecran_message():
-    """Message en haut de l'écran (clés, secrets, bonus, bilan, sauvegarde), effacé après sa durée ; ne capte pas la souris."""
-    wbp = E.ecran(UI, 'WBP_Message', recreer=True)
+    """Message en haut de l'écran (clés, secrets, bonus, bilan, sauvegarde), effacé après sa durée ; ne capte pas la souris.
+    Créé une seule fois : la mémoire de partie y fait référence (variable MessageEcran), et supprimer un écran encore
+    référencé a fait planter l'éditeur (23/10). S'il existe déjà, seule sa logique (Afficher) est réécrite."""
+    deja = executer(f'import unreal\nassert unreal.EditorAssetLibrary.does_asset_exist("{MESSAGE}")', silencieux=True) == 0
+    wbp = E.ecran(UI, 'WBP_Message')
+    if deja:
+        _logique_message(); return
     racine = E.ajouter(wbp, 'Border', 'Fond')
     E.regler(racine, '''w.set_editor_property("brush_color", unreal.LinearColor(0, 0, 0, 0))
 w.set_editor_property("horizontal_alignment", unreal.HorizontalAlignment.H_ALIGN_CENTER)
@@ -136,6 +144,10 @@ w.set_editor_property("visibility", unreal.SlateVisibility.HIT_TEST_INVISIBLE)''
                 'w.set_editor_property("shadow_color_and_opacity", unreal.LinearColor(0, 0, 0, 0.9))')
     E.variable(wbp, t)
     E.compiler(wbp)
+    _logique_message()
+
+
+def _logique_message():
     bp.evenement(MESSAGE, 'Afficher')
     texte_vide = '(Widget|SetText(Text) :self (Variables|WBP_Message|GetTexte) :InText (Utilities|Text|ToText(String) ""))'
     bp.dsl(MESSAGE, 'EventGraph', f'''
@@ -314,8 +326,12 @@ def ecran_pause():
 # ---------------------------------------------------------------- carte Menu et touche pause
 def demarrage():
     blueprint(DEMARRAGE, 'unreal.Actor')
+    # morceau du titre (Freedoom D_DM2TTL), donné par importer_musique.py
+    if 'Musique' not in set(bp.variables(DEMARRAGE)):
+        bp.var_objet(DEMARRAGE, 'Musique', '/Script/Engine.SoundBase')
     bp.dsl(DEMARRAGE, 'EventGraph', f'''
 (event EventBeginPlay
+  (Audio|PlaySound2D :Sound (Variables|Default|GetMusique) :VolumeMultiplier 0.5)
   (bind ecran (UserInterface|CreateWidget :Class "{MENU}.WBP_Menu_C" :OwningPlayer (Game|GetPlayerController 0)))
   (UserInterface|Viewport|AddtoViewport :self ecran)
   (Input|SetInputModeUIOnly :PlayerController (Game|GetPlayerController 0))

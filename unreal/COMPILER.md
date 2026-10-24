@@ -19,6 +19,7 @@ scripts réappliquent les quelques retouches qu'on leur a faites.
 | Unreal Engine | **5.8** | [Epic Games Launcher](https://www.unrealengine.com/download) |
 | Visual Studio | 2022 Community, avec : outils C++ **MSVC v143 (14.44.35211 ou plus récent)**, **SDK Windows 10.0.22621**, **SDK .NET Framework 4.8** | [visualstudio.microsoft.com](https://visualstudio.microsoft.com/fr/vs/community/) |
 | Python | 3.11 ou plus récent (bibliothèque standard seulement) | [python.org](https://www.python.org/downloads/) |
+| Node.js | 18 ou plus récent (calcul des musiques) | [nodejs.org](https://nodejs.org/) |
 | Pack Fab | **Modular SciFi Season 1 Starter Bundle** (murs, sols, plafonds, mobilier, rochers) | [fab.com](https://www.fab.com/listings/86913335-3c75-42bf-8404-54fe9d9d7396) |
 | Pack Fab | **Underground Sci-Fi** (arbre mort du décor extérieur) | [fab.com](https://fab.com/s/c4268f023de5) |
 
@@ -45,16 +46,28 @@ chemins de `Doom\profil\jeu.json`, ainsi que les chemins écrits en dur en tête
    ```
 4. **Ouvrir le projet** (`Doom.uproject`). Unreal propose de compiler le module du projet : acceptez. Le serveur MCP
    (port 8000) et l'exécution Python à distance démarrent tout seuls, d'après la configuration fournie.
-5. **Préparer les Blueprints**, éditeur ouvert, dans une invite de commandes placée dans `C:\workspace IA\Unreal` :
+5. **Préparer les Blueprints**, éditeur ouvert, dans une invite de commandes placée dans `C:\workspace IA\Unreal`, dans
+   cet ordre (les acteurs utilisent l'écran de pause, la mémoire de partie et la touche Échap créés par les menus) :
    ```
-   python Doom\outils\creer_acteurs.py
    python Doom\outils\creer_menus.py
+   python Doom\outils\creer_acteurs.py
    python Doom\outils\ue_py.py Doom\outils\retouches_packs.py
    python Doom\outils\ue_py.py Doom\outils\materiaux_instances.py
    ```
-   Ces scripts : monstres, objets, portes, secrets, sortie ; touches E, Échap, P ; balles des armes du modèle ; menus,
-   pause et sauvegarde ; carte `Menu` ; matériaux du pack adaptés aux instances ; matériau des rochers.
-6. **Construire les 95 niveaux et fabriquer le jeu** :
+   Ces scripts : menus, pause, sauvegarde et messages à l'écran ; carte `Menu` ; monstres, objets, portes, secrets,
+   sortie ; touches E, Échap, P ; balles des armes du modèle ; matériaux du pack adaptés aux instances ; matériau des
+   rochers.
+6. **Musique** (les 35 morceaux de Freedoom) : le synthétiseur FM de la version navigateur les calcule en WAV, puis ils
+   sont importés et rangés dans l'ordre des niveaux (le niveau E<n> joue le morceau n, le menu joue le titre) :
+   ```
+   node <dépôt>\html\outils\musique_wav.js DOOMED_import\musique 22050
+   python Doom\outils\ue_py.py Doom\outils\importer_musique.py
+   ```
+7. **Découpage en paquets** (un fichier par nature de contenu, voir plus bas) :
+   ```
+   python Doom\outils\ue_py.py Doom\outils\chunks.py
+   ```
+8. **Construire les 95 niveaux et fabriquer le jeu** :
    ```
    python Doom\outils\fabriquer_jeu.py --tout
    ```
@@ -69,6 +82,27 @@ python Doom\outils\fabriquer_jeu.py                     niveaux modifiés seulem
 python Doom\outils\fabriquer_jeu.py --niveaux 5,18-20   ces niveaux en plus
 python Doom\outils\fabriquer_jeu.py --sans-reconstruire packaging seul
 ```
+
+### Les paquets du jeu
+
+Le contenu est livré en un paquet par nature, pour qu'une modification ne change que son paquet (trois fichiers :
+`pakchunkN-Windows.pak`, `.utoc`, `.ucas`). Aucun fichier ne dépasse 90 Mo (`MaxIoStorePartitionSizeMB`) ; au-delà,
+Unreal ajoute une partie `_s1`.
+
+| Paquet | Contenu | Change quand on modifie… |
+|---|---|---|
+| `pakchunk0` | moteur, ses shaders globaux (chargés au démarrage), ses matériaux de base, le ciel volumétrique | les réglages de rendu, le moteur |
+| `pakchunk1` | musique | un morceau |
+| `pakchunk2` | textures (Doom, monstres, pack sci-fi) | une image |
+| `pakchunk3` | matériaux et leurs shaders | un matériau (une texture ne touche pas aux shaders) |
+| `pakchunk4` | maillages du pack | un modèle 3D |
+| `pakchunk5` | Blueprints, écrans, entrées | le gameplay, les menus |
+| `pakchunk6` | les 95 cartes | un niveau |
+| `pakchunk7` | modèle de projet Epic (personnage, armes, Arena Shooter) | le modèle Epic |
+
+Après l'ajout de ressources, relancer `chunks.py` : il refait les listes des étiquettes (`Content\DOOMED\Chunks`), puis
+faire un packaging avec `--cook-complet` : le cook incrémental ne tient pas compte d'un changement d'étiquettes.
+Unreal garde d'office le contenu du moteur (`/Engine`, dont le ciel) dans `pakchunk0`.
 
 ## Éditeur de niveaux
 

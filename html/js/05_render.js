@@ -3,7 +3,7 @@
  *
  * CONTRAT (vérifié par test.html — ne rien retirer de cette liste) :
  *   FOURNIT : FOV_PLANE VSCALE shadeOf shadePx camera lumiere render3D renderFloorCeil castWalls drawSprites
- *             render3D(view{x,y,a,z?}, niveau, sprites[{x,y,tex,scale,z?,bright?,flat?}]) remplit FB et ZBUF,
+ *             render3D(view{x,y,a,z?}, niveau, sprites[{x,y,tex,scale,z?,bright?,flat?,fuzz?}]) remplit FB et ZBUF,
  *             sans dessiner sur ctx (c'est 07_hud qui fait putImageData).
  *             view.z = hauteur de l'œil (0,5 normale, 0,1 = au sol) ; lumiere(L, cx, cy) = lumière de la case.
  *   UTILISE : W PLAY_H HOR TEX FB ZBUF clamp (01) · TX WALL_TEX (02) · CELL_* (04)
@@ -14,7 +14,8 @@ const FOV_PLANE = 0.66;                    // demi-largeur du plan caméra (FOV 
 const VSCALE = W / (2 * FOV_PLANE);        // échelle verticale = horizontale : texels carrés
 
 /* lumière selon la distance (1 = plein, 0,1 = presque noir) */
-const shadeOf = d => clamp(1.12 - d * 0.075, 0.1, 1);
+let VISION_NOCTURNE = false;   // lunettes de vision nocturne (06) : tout est éclairé
+const shadeOf = d => VISION_NOCTURNE ? 1 : clamp(1.12 - d * 0.075, 0.1, 1);
 
 /* couleur c assombrie par s (0..256) */
 function shadePx(c, s) {
@@ -82,9 +83,13 @@ function renderFloorCeil(cam, L) {
     let fx = px + rowDist * r0x, fy = py + rowDist * r0y;
     const base = (shadeOf(rowDist) * 256) | 0;
     for (let x = 0, i = y * W; x < W; x++, i++) {
-      if (L.floorType && L.floorType[(fy | 0) * L.w + (fx | 0)] === 1) {
+      const ft = L.floorType ? L.floorType[(fy | 0) * L.w + (fx | 0)] : 0;
+      if (ft === 1 || ft === 2) {   // lave et nukage : lumineux, animés (06)
         const t = ((((fy * TEX) | 0) & 63) << 6) | (((fx * TEX) | 0) & 63);
-        FB[i] = TX.lava.px[t];
+        FB[i] = (ft === 2 && TX.nukage ? TX.nukageAnim || TX.nukage : TX.lavaAnim || TX.lava).px[t];
+      } else if (ft === 3 && TX.gate) {   // téléporteur
+        const t = ((((fy * TEX) | 0) & 63) << 6) | (((fx * TEX) | 0) & 63);
+        FB[i] = shadePx(TX.gate.px[t], (base * lumiere(L, fx | 0, fy | 0)) | 0);
       } else {
         const t = ((((fy * TEX) | 0) & 63) << 6) | (((fx * TEX) | 0) & 63);
         FB[i] = shadePx(fl[t], (base * lumiere(L, fx | 0, fy | 0)) | 0);
@@ -98,6 +103,7 @@ function renderFloorCeil(cam, L) {
 function castWalls(cam, L) {
   const { px, py, dx, dy, plx, ply, z } = cam;
   const gw = L.w, gh = L.h, grid = L.grid;
+  const vu = L.vu || (L.vu = new Uint8Array(gw * gh));   // murs déjà vus : la carte automatique (07b) ne trace qu'eux
   for (let x = 0; x < W; x++) {
     const k = 2 * x / W - 1;
     const rdx = dx + plx * k, rdy = dy + ply * k;
@@ -114,6 +120,7 @@ function castWalls(cam, L) {
       if (mx < 0 || my < 0 || mx >= gw || my >= gh) { dist = side ? sdy - ddy : sdx - ddx; break; }
       const code = grid[my * gw + mx];
       if (code === CELL_EMPTY) { inDoor = false; continue; }
+      vu[my * gw + mx] = 1;
       if (code === CELL_DOOR) {
         // porte en retrait d'une demi-case, qui coulisse dans son plan
         const D = L.doors[L.doorAt[my * gw + mx]];
@@ -151,6 +158,7 @@ function castWalls(cam, L) {
   }
 }
 
+let FLOU = 0;
 /* ---- sprites, du plus loin au plus proche, avec leur ombre au sol ---- */
 function drawSprites(cam, L, sprites) {
   const { px, py, dx, dy, plx, ply, z } = cam;
@@ -172,7 +180,7 @@ function drawSprites(cam, L, sprites) {
 
     /* ombre au sol, AVANT le sprite : ellipse aplatie sur la ligne du sol,
        qui assombrit les pixels déjà dessinés (sol) au lieu de les repeindre */
-    if (!sp.flat) {
+    if (!sp.flat && !sp.fuzz) {
       const floorY = HOR + z * unit;                       // ligne du sol sous le sprite
       const rx = wid * 0.45, ry = Math.max(1, unit * 0.06);
       const sx0 = Math.max(0, Math.ceil(scrX - rx)), sx1 = Math.min(W, Math.ceil(scrX + rx));
@@ -195,7 +203,11 @@ function drawSprites(cam, L, sprites) {
       const tx = Math.min(tw - 1, ((x - left) * tw / wid) | 0);
       for (let y = ys; y < ye; y++) {
         const c = tpx[Math.min(th - 1, ((y - top) * th / hgt) | 0) * tw + tx];
-        if (c) FB[y * W + x] = shadePx(c, sh);
+        if (!c) continue;
+        if (sp.fuzz) {   // spectre : le décor décalé et assombri, comme le flou de Doom
+          const i = y * W + x, j = i + (((x * 7 + y * 13 + FLOU++) & 3) < 2 ? -W : W);
+          FB[i] = shadePx(FB[j >= 0 && j < FB.length ? j : i], 150);
+        } else FB[y * W + x] = shadePx(c, sh);
       }
     }
   }
